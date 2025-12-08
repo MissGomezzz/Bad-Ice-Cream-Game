@@ -9,7 +9,7 @@ public class LevelFactory {
         return switch (levelNumber) {
             case 1 -> createLevel1();
             case 2 -> createLevel2();
-            // puedes ir añadiendo más niveles aquí
+            case 3 -> createLevel3();
             default -> createLevel1(); // fallback
         };
     }
@@ -36,7 +36,17 @@ public class LevelFactory {
                 Banana.class,
                 Pineapple.class
         );
+        return LevelLoader.loadFromResource(path, phases);
+    }
 
+    private static Level createLevel3() {
+        String path = "/maps/level3.txt";
+
+        // Ejemplo: primero Grapes, luego Pineapples
+        List<Class<? extends Fruit>> phases = List.of(
+                Cactus.class,
+                Cherry.class
+        );
         return LevelLoader.loadFromResource(path, phases);
     }
 }

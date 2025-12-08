@@ -14,6 +14,7 @@ public class LevelLoader {
 
     public static Level loadFromResource(String path, List<Class<? extends Fruit>> fruitPhases) {
         List<String> lines = readLines(path);
+        List<Campfire> campfires = new ArrayList<>();
 
         int rows = lines.size();
         int cols = lines.get(0).length();
@@ -69,15 +70,47 @@ public class LevelLoader {
                         ));
                         break;
 
+                    case 'O': // Orange Squid
+                        board.setCellType(pos, CellType.FLOOR);
+                        enemies.add(new OrangeSquid(
+                                pos,
+                                Direction.DOWN,
+                                new OrangeSquidMovement()
+                        ));
+                        break;
+                    case 'V': // Narval
+                        board.setCellType(pos, CellType.FLOOR);
+                        enemies.add(new Narval(
+                                pos,
+                                Direction.DOWN,
+                                new NarvalMovement()
+                        ));
+                        break;
+
                     case 'N': // Pineapple
                         board.setCellType(pos, CellType.FLOOR);
                         fruits.add(new Pineapple(pos));
                         break;
 
-
                     case 'P': // player
                         board.setCellType(pos, CellType.FLOOR);
                         players.add(new Player(pos));
+                        break;
+
+                    case 'C': // Cactus
+                        board.setCellType(pos, CellType.FLOOR);
+                        fruits.add(new Cactus(pos));
+                        break;
+
+                    case 'Y': // Cherry
+                        board.setCellType(pos, CellType.FLOOR);
+                        fruits.add(new Cherry(pos));
+                        break;
+
+                    case 'F': // Fogata (Fire/Campfire)
+                        board.setCellType(pos, CellType.CAMPFIRE_ON);
+                        Campfire campfire = new Campfire(pos);
+                        campfires.add(campfire);
                         break;
 
                     case '.':
@@ -88,7 +121,7 @@ public class LevelLoader {
         }
 
         // Construir el nivel
-        Level level = new Level(board, players, enemies, fruits, fruitPhases);
+        Level level = new Level(board, players, enemies, fruits, campfires, fruitPhases);
         return level;
     }
 

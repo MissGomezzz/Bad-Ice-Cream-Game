@@ -13,7 +13,9 @@ public enum CellType {
     ICE_BLOCK(false),
     IGLOO_AREA(false),
     FLOOR(true),
-    PLAYER_ICE(false);
+    PLAYER_ICE(false),
+    CAMPFIRE_ON(false),   // Fogata encendida
+    CAMPFIRE_OFF(true);  // Fogata apagada
 
     private final Boolean traversable;
 

@@ -17,16 +17,21 @@ public class Level {
     private final List<Enemy> enemies;
     private final List<Fruit> fruits;
     private final FruitManager fruitManager;
+    private final List<Campfire> campfires;
     private final List<Class<? extends Fruit>> fruitPhases;
     private int currentPhaseIndex = 0;
     private final Map<Player, Direction> lastInputs = new HashMap<>();
+    private int playerTickCounter = 0;
+    private static final int TICKS_PER_PLAYER_MOVE = 5; // Ajusta este valor
 
 
-    public Level (Board board, List<Player> players, List<Enemy> enemies, List<Fruit> fruits, List<Class<? extends Fruit>> fruitPhases) {
+    public Level (Board board, List<Player> players, List<Enemy> enemies, List<Fruit> fruits, List<Campfire> campfires,
+                  List<Class<? extends Fruit>> fruitPhases) {
         this.board = board;
         this.players = players != null ? players : new ArrayList<>();
         this.enemies = enemies != null ? enemies : new ArrayList<>();
         this.fruits = fruits != null ? fruits : new ArrayList<>();
+        this.campfires = campfires != null ? campfires : new ArrayList<>();
         this.fruitManager = new FruitManager(this.fruits);
         this.fruitPhases  = fruitPhases != null ? fruitPhases : new ArrayList<>();
         initFirstFruitPhase();
@@ -37,6 +42,7 @@ public class Level {
     public List<Enemy> getEnemies() {return this.enemies;}
     public List<Fruit> getFruits() {return this.fruits;}
     public FruitManager getFruitManager() {return this.fruitManager;}
+    public List<Campfire> getCampfires() { return this.campfires; }
 
 
     private void initFirstFruitPhase() {
@@ -58,9 +64,10 @@ public class Level {
         updateFruits();
         CollisionDetector.checkPlayerFruit(players, fruitManager.getActiveFruits());
         CollisionDetector.checkPlayerEnemy(players, enemies);
-
+        CollisionDetector.checkPlayerCampfire(players, board); // NUEVO
         updateFruitPhase();
         updateEnemies();
+        updateCampfires();
     }
 
     private void updateFruits() {
@@ -95,6 +102,12 @@ public class Level {
      */
     private void updatePlayers(Map<Player, Direction> playerInputs) {
         if (players.isEmpty()) return;
+
+        // NUEVO: Control de velocidad del jugador
+        playerTickCounter++;
+        if (playerTickCounter % TICKS_PER_PLAYER_MOVE != 0) {
+            return; // No mover todavía
+        }
 
         for (Player p : players) {
             Direction inputDir = playerInputs.getOrDefault(p, Direction.NONE);
@@ -168,6 +181,11 @@ public class Level {
             if (e.getMovementBehavior() != null) {
                 e.getMovementBehavior().move(this, e);
             }
+        }
+    }
+    private void updateCampfires() {
+        for (Campfire campfire : campfires) {
+            campfire.update(this);
         }
     }
 

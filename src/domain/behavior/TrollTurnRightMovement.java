@@ -14,7 +14,7 @@ import domain.utils.Direction;
 public class TrollTurnRightMovement implements MovementBehavior{
     //Para que no ande tan rápido
     private int tickCounter = 0;
-    private static final int TICKS_PER_MOVE = 2; //Se mueve 1 vez cada x updates
+    private static final int TICKS_PER_MOVE = 16; //Se mueve 1 vez cada x updates
 
     @Override
     public void move(Level level, Entity object) {

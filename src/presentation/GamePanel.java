@@ -54,7 +54,7 @@ public class GamePanel extends JPanel implements Runnable, KeyListener, MouseLis
 
     @Override
     public void run() {
-        final long frameTime = 250;
+        final long frameTime = 16;
 
         while (running) {
             long start = System.currentTimeMillis();

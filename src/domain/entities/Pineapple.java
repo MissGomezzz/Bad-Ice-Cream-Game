@@ -12,7 +12,7 @@ public class Pineapple extends MovingFruit {
         super(position,
                 PINEAPPLE_SCORE,
                 SPRITE,
-                new PineappleMovement()); // 🍍 comportamiento por defecto
+                new PineappleMovement());
     }
 
     public int getPoints() { return PINEAPPLE_SCORE; }

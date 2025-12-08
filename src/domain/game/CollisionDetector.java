@@ -3,6 +3,7 @@ package domain.game;
 import domain.entities.Player;
 import domain.entities.Fruit;
 import domain.entities.Enemy;
+import domain.model.CellType;
 import domain.model.Position;
 import domain.model.Board;
 import java.util.List;
@@ -47,6 +48,20 @@ public class CollisionDetector {
                 if (sameCell(p.getPosition(), e.getPosition())) {
                     p.onHitByEnemy(e);
                 }
+            }
+        }
+    }
+
+    /**
+     * Jugador + fogatas: si el jugador está en una fogata encendida, muere
+     */
+    public static void checkPlayerCampfire(List<Player> players, Board board) {
+        for (Player p : players) {
+            Position pos = p.getPosition();
+            CellType cellType = board.getCellType(pos);
+
+            if (cellType == CellType.CAMPFIRE_ON) {
+                p.onHitByEnemy(null); // Eliminar al jugador
             }
         }
     }
