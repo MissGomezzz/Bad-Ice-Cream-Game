@@ -4,6 +4,9 @@ import domain.behavior.FruitMovementBehavior;
 import domain.game.Level;
 import domain.model.Position;
 
+/**
+ * Una fruta puede ser dinámica
+ */
 public abstract class MovingFruit extends Fruit {
 
     protected FruitMovementBehavior movementBehavior;
@@ -15,21 +18,12 @@ public abstract class MovingFruit extends Fruit {
 
     /**
      * Las frutas móviles actualizan su estado solo si:
-     *  - no están congeladas
-     *  - no están recogidas
+     *  No están congeladas ni recogidas
      */
     @Override
     public void update(Level level) {
         if (!isCollected() && !isFrozen() && movementBehavior != null) {
             movementBehavior.move(level, this);
         }
-    }
-
-    public void setMovementBehavior(FruitMovementBehavior behavior) {
-        this.movementBehavior = behavior;
-    }
-
-    public FruitMovementBehavior getMovementBehavior() {
-        return movementBehavior;
     }
 }

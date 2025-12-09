@@ -11,9 +11,12 @@ import domain.utils.Direction;
 import java.util.*;
 
 /**
- * Maceta:
- * - MODO RANDOM: se mueve de forma pseudo-aleatoria por el mapa (~5 segundos).
- * - MODO CHASING: persigue al jugador usando BFS, más rápido (~5 segundos).
+ * Comportamiento de la Maceta:
+ * Alterna entre dos modos de movimiento con diferentes velocidades:
+ * MODO RANDOM: Se mueve de forma random por el mapa.
+ * Cambia de dirección ocasionalmente y evita obstáculos.
+ * MODO CHASING: Persigue activamente al jugador usando BFS (Breadth-First Search)
+ * para encontrar el camino más corto.
  */
 public class MacetaChaseMovement implements MovementBehavior {
 
@@ -24,29 +27,30 @@ public class MacetaChaseMovement implements MovementBehavior {
     // Contador de movimientos reales en el modo actual
     private int movementCounter = 0;
 
-    // Duraciones en número de MOVIMIENTOS (valores más bajos para testing)
-    // Si tu juego corre a 60 FPS y mueves cada 2 frames = 30 movimientos/seg
-    // 5 segundos = 150 movimientos en modo random (30 mov/seg * 5 seg)
-    // 5 segundos = 300 movimientos en modo chase (60 mov/seg * 5 seg)
-    private static final int RANDOM_MOVEMENTS = 25;  // Reducido para testing
-    private static final int CHASE_MOVEMENTS  = 35; // Reducido para testing
+    // Cantidad de movimientos antes de cambiar de modo
+    private static final int RANDOM_MOVEMENTS = 25;
+    private static final int CHASE_MOVEMENTS  = 35;
 
-    // Velocidades (cada cuántos ticks se mueve)
-    private static final int RANDOM_TICKS_PER_MOVE = 16; // más lento en random
-    private static final int CHASE_TICKS_PER_MOVE  = 12;  // más rápido en chase
+    // Velocidades: cada cuántos ticks se mueve en cada modo
+    private static final int RANDOM_TICKS_PER_MOVE = 16; // Más lento en random
+    private static final int CHASE_TICKS_PER_MOVE  = 12;  // Más rápido en chase
 
-    // Contador de ticks para el movimiento actual
+    // Contador de ticks desde el último movimiento
     private int ticksSinceLastMove = 0;
 
-    // Estado interno para random
+    // Estado para movimiento aleatorio
     private Direction randomDir = Direction.LEFT;
     private final Random rng = new Random();
 
-    // Estado interno para persecución
+    // Estado para persecución
     private List<Direction> currentPath = new ArrayList<>();
     private int lastTargetRow = -1;
     private int lastTargetCol = -1;
 
+    /**
+     * Ejecuta el comportamiento de la maceta en cada tick del juego.
+     * Alterna entre modo random y chase según la cantidad de movimientos realizados.
+     */
     @Override
     public void move(Level level, Entity object) {
         Enemy enemy = (Enemy) object;
@@ -54,35 +58,31 @@ public class MacetaChaseMovement implements MovementBehavior {
         List<Player> players = level.getPlayers();
         if (players.isEmpty()) return;
 
-        Player target = players.get(0);
+        Player target = players.getFirst();
         Position start = enemy.getPosition();
         Position goal  = target.getPosition();
 
         // Incrementar contador de ticks
         ticksSinceLastMove++;
 
-        // Determinar cada cuántos ticks se mueve según el modo actual
+        // Determinar velocidad según el modo actual
         int ticksPerMove = (mode == Mode.RANDOM)
                 ? RANDOM_TICKS_PER_MOVE
                 : CHASE_TICKS_PER_MOVE;
 
-        // Si no ha pasado suficiente tiempo, no moverse
+        // Control de velocidad: solo moverse cada X ticks
         if (ticksSinceLastMove < ticksPerMove) {
             return;
         }
 
-        // Resetear contador de ticks
         ticksSinceLastMove = 0;
-
-        // IMPORTANTE: Incrementar DESPUÉS de verificar el cambio de modo
-        // para que el primer movimiento cuente correctamente
 
         // Ejecutar lógica del modo actual
         if (mode == Mode.RANDOM) {
             randomStep(board, enemy);
             movementCounter++;
 
-            // Cambiar a CHASING después de suficientes movimientos
+            // Cambiar a modo persecución después de suficientes movimientos
             if (movementCounter >= RANDOM_MOVEMENTS) {
                 switchToChaseMode();
             }
@@ -90,82 +90,99 @@ public class MacetaChaseMovement implements MovementBehavior {
         } else { // CHASING
             chaseStep(board, enemy, start, goal);
             movementCounter++;
-            // Volver a RANDOM después de suficientes movimientos
+
+            // Volver a modo random después de suficientes movimientos
             if (movementCounter >= CHASE_MOVEMENTS) {
                 switchToRandomMode();
             }
         }
     }
 
+    /**
+     * Cambia al modo de persecución activa.
+     * Resetea contadores y limpia el camino anterior.
+     */
     private void switchToChaseMode() {
         mode = Mode.CHASING;
         movementCounter = 0;
-        ticksSinceLastMove = 0; // Reset para que empiece inmediatamente
+        ticksSinceLastMove = 0;
         currentPath.clear();
     }
 
+    /**
+     * Cambia al modo de movimiento aleatorio.
+     * Resetea contadores y limpia el camino de persecución.
+     */
     private void switchToRandomMode() {
         mode = Mode.RANDOM;
         movementCounter = 0;
-        ticksSinceLastMove = 0; // Reset para que empiece inmediatamente
+        ticksSinceLastMove = 0;
         currentPath.clear();
     }
 
-    // ===================== MODO RANDOM =====================
-
+    /**
+     * Ejecuta un paso de movimiento aleatorio.
+     * La maceta tiene 30% de probabilidad de cambiar de dirección en cada movimiento,
+     * y siempre cambia de dirección si encuentra un obstáculo.
+     */
     private void randomStep(Board board, Enemy enemy) {
         Position pos = enemy.getPosition();
 
-        // 30% de probabilidad de cambiar de dirección aunque no choque
+        // 30% de probabilidad de cambiar de dirección espontáneamente
         if (rng.nextDouble() < 0.3) {
             randomDir = randomWalkableDirection(board, pos);
         }
 
-        // Si la dirección actual está bloqueada, buscamos otra
+        // Verificar si la dirección actual está bloqueada
         Position next = pos.translated(randomDir.getDRow(), randomDir.getDCol());
         if (!board.isInside(next) || !board.isWalkable(next)) {
             randomDir = randomWalkableDirection(board, pos);
             next = pos.translated(randomDir.getDRow(), randomDir.getDCol());
         }
 
-        // Si encontramos una dirección válida, nos movemos
+        // Moverse si hay una dirección válida
         if (board.isInside(next) && board.isWalkable(next)) {
             enemy.setPosition(next);
             enemy.setDirection(randomDir);
         }
     }
 
+    /**
+     * Encuentra una dirección aleatoria válida (sin obstáculos) desde la posición actual.
+     */
     private Direction randomWalkableDirection(Board board, Position pos) {
-        Direction[] dirs = {
+        Direction[] allDirections = {
                 Direction.UP,
                 Direction.DOWN,
                 Direction.LEFT,
                 Direction.RIGHT
         };
 
-        List<Direction> candidates = new ArrayList<>();
+        List<Direction> validDirections = new ArrayList<>();
 
-        for (Direction d : dirs) {
-            Position np = pos.translated(d.getDRow(), d.getDCol());
-            if (board.isInside(np) && board.isWalkable(np)) {
-                candidates.add(d);
+        // Filtrar solo direcciones caminables 
+        for (Direction dir : allDirections) {
+            Position nextPos = pos.translated(dir.getDRow(), dir.getDCol());
+            if (board.isInside(nextPos) && board.isWalkable(nextPos)) {
+                validDirections.add(dir);
             }
         }
 
-        if (candidates.isEmpty()) {
+        if (validDirections.isEmpty()) {
             return Direction.NONE;
-        } else {
-            return candidates.get(rng.nextInt(candidates.size()));
         }
+
+        return validDirections.get(rng.nextInt(validDirections.size()));
     }
 
-    // ===================== MODO CHASING (BFS) =====================
-
+    /**
+     * Ejecuta un paso de persecución hacia el jugador.
+     * Usa BFS para calcular el camino más corto y sigue ese camino.
+     * Recalcula el camino si el jugador se mueve o si el camino se bloquea.
+     */
     private void chaseStep(Board board, Enemy enemy, Position start, Position goal) {
 
-        // Recalcular camino si:
-        //  - No tenemos camino
-        //  - El jugador cambió de casilla
+        // Recalcular camino si no hay camino o el jugador se movió
         if (currentPath.isEmpty()
                 || goal.getRow() != lastTargetRow
                 || goal.getCol() != lastTargetCol) {
@@ -176,22 +193,27 @@ public class MacetaChaseMovement implements MovementBehavior {
         }
 
         if (currentPath.isEmpty()) {
-            // No hay camino, quedarse quieto
+            // No hay camino disponible, quedarse quieto
             return;
         }
 
-        Direction stepDir = currentPath.remove(0);
+        Direction stepDir = currentPath.removeFirst();
         Position next = start.translated(stepDir.getDRow(), stepDir.getDCol());
 
         if (board.isInside(next) && board.isWalkable(next)) {
             enemy.setPosition(next);
             enemy.setDirection(stepDir);
         } else {
-            // Camino bloqueado (hielo nuevo, etc.)
+            // Camino bloqueado (nuevo hielo, etc.), limpiar y recalcular en siguiente tick
             currentPath.clear();
         }
     }
 
+    /**
+     * Algoritmo BFS (Breadth-First Search) para encontrar el camino más corto
+     * desde start hasta goal en el tablero.
+     * Retorna una lista de direcciones que representan el camino.
+     */
     private List<Direction> bfs(Board board, Position start, Position goal) {
         int rows = board.getRows();
         int cols = board.getCols();
@@ -200,6 +222,7 @@ public class MacetaChaseMovement implements MovementBehavior {
         int[][] parentR = new int[rows][cols];
         int[][] parentC = new int[rows][cols];
 
+        // Inicializar padres como -1 (sin padre)
         for (int r = 0; r < rows; r++) {
             Arrays.fill(parentR[r], -1);
             Arrays.fill(parentC[r], -1);
@@ -209,25 +232,27 @@ public class MacetaChaseMovement implements MovementBehavior {
         queue.add(start);
         visited[start.getRow()][start.getCol()] = true;
 
-        int[] dr = {-1, 1, 0, 0};
-        int[] dc = {0, 0, -1, 1};
+        // Direcciones: arriba, abajo, izquierda, derecha
+        Direction[] directions = {Direction.UP, Direction.DOWN, Direction.LEFT, Direction.RIGHT};
 
         boolean found = false;
 
+        // BFS principal
         while (!queue.isEmpty()) {
             Position current = queue.poll();
             int cr = current.getRow();
             int cc = current.getCol();
 
+            // Meta alcanzada
             if (cr == goal.getRow() && cc == goal.getCol()) {
                 found = true;
                 break;
             }
 
-            for (int i = 0; i < 4; i++) {
-                int nr = cr + dr[i];
-                int nc = cc + dc[i];
-
+            // Explorar vecinos
+            for (Direction dir : directions) {
+                int nr = cr + dir.getDRow();
+                int nc = cc + dir.getDCol();
                 Position np = new Position(nr, nc);
 
                 if (!board.isInside(np)) continue;
@@ -243,6 +268,7 @@ public class MacetaChaseMovement implements MovementBehavior {
 
         if (!found) return new ArrayList<>();
 
+        // Reconstruir camino desde goal hasta start
         List<Direction> path = new ArrayList<>();
         int r = goal.getRow();
         int c = goal.getCol();
@@ -252,11 +278,12 @@ public class MacetaChaseMovement implements MovementBehavior {
             int pc = parentC[r][c];
 
             if (pr == -1 && pc == -1) {
+                // No hay padre válido (no debería pasar si found == true)
                 return new ArrayList<>();
             }
 
-            Direction d = directionFrom(pr, pc, r, c);
-            path.add(0, d);
+            Direction dir = directionFrom(pr, pc, r, c);
+            path.addFirst(dir);
 
             r = pr;
             c = pc;
@@ -265,6 +292,10 @@ public class MacetaChaseMovement implements MovementBehavior {
         return path;
     }
 
+    /**
+     * Determina la dirección de movimiento entre dos posiciones adyacentes.
+     * Usado para reconstruir el camino en BFS.
+     */
     private Direction directionFrom(int r1, int c1, int r2, int c2) {
         if (r2 == r1 - 1 && c2 == c1) return Direction.UP;
         if (r2 == r1 + 1 && c2 == c1) return Direction.DOWN;

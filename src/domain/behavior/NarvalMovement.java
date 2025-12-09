@@ -1,27 +1,23 @@
 package domain.behavior;
 
-import domain.entities.Enemy;
-import domain.entities.Entity;
-import domain.entities.Player;
+import domain.entities.*;
 import domain.game.Level;
-import domain.model.Board;
-import domain.model.CellType;
-import domain.model.Position;
+import domain.model.*;
 import domain.utils.Direction;
 
 import java.util.List;
 
 /**
  * Comportamiento del Narval:
- * - Modo PATRULLA: Se mueve en línea recta, rebotando en paredes
- * - Modo EMBESTIDA: Detecta jugador alineado y embiste rápidamente, destruyendo hielo
+ * Modo PATRULLA: Se mueve en línea recta, rebotando en paredes
+ * Modo EMBESTIDA: Detecta jugador alineado y embiste rápidamente, destruyendo hielo
  */
 public class NarvalMovement implements MovementBehavior {
 
     // Estados del Narval
     private enum State {
         PATROL,    // Patrullando normalmente
-        CHARGING   // Embistiendo hacia el jugador
+        CHARGING   // Embestida
     }
 
     private State state = State.PATROL;
@@ -96,8 +92,8 @@ public class NarvalMovement implements MovementBehavior {
     }
 
     /**
-     * Verifica si hay línea de visión entre dos posiciones
-     * (solo considera paredes como obstáculos, el hielo se puede romper)
+     * Verifica si hay línea de visión entre dos posiciones.
+     * Solo considera paredes como obstáculos, el hielo se puede romper durante la embestida.
      */
     private boolean hasLineOfSight(Board board, Position from, Position to, boolean horizontal) {
         if (horizontal) {
@@ -116,6 +112,7 @@ public class NarvalMovement implements MovementBehavior {
                     return false;
                 }
             }
+        // Vertical
         } else {
             int col = from.getCol();
             int rowStart = Math.min(from.getRow(), to.getRow());
@@ -125,6 +122,7 @@ public class NarvalMovement implements MovementBehavior {
                 Position pos = new Position(row, col);
                 CellType cell = board.getCellType(pos);
 
+                // Solo las paredes bloquean la visión
                 if (cell == CellType.METALLIC_WALL ||
                         cell == CellType.RED_WALL ||
                         cell == CellType.YELLOW_WALL) {
@@ -132,7 +130,6 @@ public class NarvalMovement implements MovementBehavior {
                 }
             }
         }
-
         return true;
     }
 

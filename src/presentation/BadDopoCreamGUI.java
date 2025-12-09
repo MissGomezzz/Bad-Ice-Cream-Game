@@ -1,8 +1,6 @@
 package presentation;
 
 import domain.game.Game;
-import presentation.MenuState;
-
 import javax.swing.*;
 import java.awt.*;
 
@@ -11,28 +9,25 @@ import java.awt.*;
  */
 public class BadDopoCreamGUI extends JFrame {
 
-    private final Game game;
-    private final GamePanel panel;
-
     public BadDopoCreamGUI() {
         setTitle("Bad DOPO Cream");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         // Crear el juego
-        this.game = new Game();
-        this.game.setState(new MenuState(game));
+        Game game = new Game();
+        game.setState(new MenuState(game));
 
         // Crear el panel que dibuja y actualiza el juego
-        this.panel = new GamePanel(game);
+        GamePanel panel = new GamePanel(game);
 
         setLayout(new BorderLayout());
         add(panel, BorderLayout.CENTER);
 
-        // Opcional: tamaño base antes de poner fullscreen
+        // Tamaño base
         setSize(800, 800);
         setLocationRelativeTo(null);
 
-        // Pantalla completa (si lo quieres siempre fullscreen)
+        // Pantalla completa
         setExtendedState(JFrame.MAXIMIZED_BOTH);
 
         setVisible(true);

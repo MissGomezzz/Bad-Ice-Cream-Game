@@ -1,16 +1,12 @@
 package domain.game;
 
-import domain.behavior.TrollTurnRightMovement;
 import domain.entities.*;
-import domain.model.Board;
-import domain.model.CellType;
-import domain.model.Position;
+import domain.model.*;
 import domain.utils.Direction;
 import presentation.GamePanel;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,20 +22,33 @@ public class PlayingState implements GameState {
     private final Game game;
     private final Level level;
     private int timerTicks = 0;
-    private static final int TIME_LIMIT = 10800; // 3 minutos a 60 FPS (3 * 60 * 60)
+    private static final int TIME_LIMIT = 10800; // 3 minutos a 60 FPS
     private boolean timeUp = false;
-    private int currentLevelNumber;
+    private final int currentLevelNumber;
 
+    // Sprites estáticos
+    private static final Sprite FLOOR_SPRITE = new Sprite("/empty.jpg");
+    private static final Sprite WALL_SPRITE = new Sprite("/wall.jpg");
+    private static final Sprite RED_WALL_SPRITE = new Sprite("/red-wall.jpg");
+    private static final Sprite YELLOW_WALL_SPRITE = new Sprite("/yellow-wall.jpg");
+    private static final Sprite ICE_SPRITE = new Sprite("/ice.jpg");
+    private static final Sprite PLAYER_ICE_SPRITE = new Sprite("/player-ice.png");
+    private static final Sprite PILE_SNOW_SPRITE = new Sprite("/pile-of-snow.jpg");
+    private static final Sprite IGLOO_SPRITE = new Sprite("/igloo.jpg");
+    private static final Sprite HOT_TILE_SPRITE = new Sprite ("/hot-tile.png");
+    private static final Sprite CAMPFIRE_ON_SPRITE = new Sprite("/campfire-on.png");
+    private static final Sprite CAMPFIRE_OFF_SPRITE = new Sprite("/campfire-off.png");
 
-    //Dirección actual del jugador 1 (más adelante añadimos jugador 2)
+    // Frutas
+    private static final Sprite CACTUS_SAFE_SPRITE = new Sprite("/cactus-safe.png");
+    private static final Sprite CACTUS_DANGEROUS_SPRITE = new Sprite("/cactus-not-safe.png");
+
+    // Dirección jugador 1
     private Direction p1Dir = Direction.NONE;
 
     public PlayingState(Game game, int levelNumber) {
         this.game = game;
-        this.currentLevelNumber = levelNumber; // NUEVO
-
-        //Crear tablero según el tamaño lógico del GamePanel
-        Board board = new Board(GamePanel.ROWS, GamePanel.COLS);
+        this.currentLevelNumber = levelNumber;
 
         //Crear el Level
         this.level = LevelFactory.createLevel(levelNumber);
@@ -62,11 +71,11 @@ public class PlayingState implements GameState {
             return;
         }
 
-        // Construimos el mapa de inputs para los jugadores
+        // Construir el mapa de inputs para los jugadores
         Map<Player, Direction> inputs = new HashMap<>();
 
-        // Por ahora solo hay un jugador
-        Player p1 = level.getPlayers().get(0);
+        // Para jugador 1
+        Player p1 = level.getPlayers().getFirst();
         inputs.put(p1, p1Dir);
 
         // Actualizamos la lógica del nivel
@@ -79,8 +88,8 @@ public class PlayingState implements GameState {
             try {
                 Thread.sleep(2000); // 2 segundos de pausa
 
-                // Reiniciar el nivel (volver a crear PlayingState con el mismo nivel)
-                int currentLevel = getCurrentLevelNumber(); // Necesitamos saber qué nivel es
+                // Reiniciar el nivel
+                int currentLevel = getCurrentLevelNumber(); // Obtener nivel actual
                 game.setState(new PlayingState(game, currentLevel));
 
             } catch (InterruptedException e) {
@@ -89,20 +98,16 @@ public class PlayingState implements GameState {
         }).start();
     }
 
-    private int getCurrentLevelNumber() {
-        return this.currentLevelNumber;
-    }
-
     @Override
     public void render(Graphics2D g) {
         Board board = level.getBoard();
         int tile = GamePanel.TILE_SIZE;
 
-        // ===== FONDO =====
-        g.setColor(new Color(240, 248, 255)); // Azul muy claro (hielo)
+        // Fondo
+        g.setColor(new Color(240, 248, 255));
         g.fillRect(0, 0, board.getCols() * tile, board.getRows() * tile);
 
-        // ===== DIBUJAR TABLERO (paredes + hielo + piso) =====
+        // Dibujar tablero usando sprites
         for (int r = 0; r < board.getRows(); r++) {
             for (int c = 0; c < board.getCols(); c++) {
                 Position p = new Position(r, c);
@@ -112,137 +117,54 @@ public class PlayingState implements GameState {
                 int y = r * tile;
 
                 switch (cell) {
-                    case METALLIC_WALL -> {
-                        // Pared metálica - Gris oscuro
-                        g.setColor(new Color(60, 60, 70));
-                        g.fillRect(x, y, tile, tile);
-                        // Borde para dar efecto 3D
-                        g.setColor(new Color(90, 90, 100));
-                        g.drawRect(x, y, tile - 1, tile - 1);
-                    }
+                    case METALLIC_WALL -> WALL_SPRITE.draw(g, x, y, tile, tile);
 
-                    case ICE_BLOCK -> {
-                        // Hielo normal - Azul claro brillante
-                        g.setColor(new Color(150, 220, 255));
-                        g.fillRect(x, y, tile, tile);
-                        // Efecto de brillo
-                        g.setColor(new Color(200, 240, 255, 150));
-                        g.fillRect(x + 2, y + 2, tile / 3, tile / 3);
-                    }
+                    case RED_WALL -> RED_WALL_SPRITE.draw(g, x, y, tile, tile);
 
-                    case PLAYER_ICE -> {
-                        // Hielo del jugador - Gris plateado
-                        g.setColor(new Color(180, 190, 200));
-                        g.fillRect(x, y, tile, tile);
-                        g.setColor(new Color(220, 230, 240));
-                        g.fillRect(x + 2, y + 2, tile / 3, tile / 3);
-                    }
+                    case YELLOW_WALL -> YELLOW_WALL_SPRITE.draw(g, x, y, tile, tile);
 
-                    case CAMPFIRE_ON -> {
-                        // Fogata encendida - Rojo/Naranja (ya se dibuja después)
-                        g.setColor(new Color(255, 255, 240));
-                        g.fillRect(x, y, tile, tile);
-                    }
+                    case ICE_BLOCK -> ICE_SPRITE.draw(g, x, y, tile, tile);
 
-                    case HOT_TILE -> {
-                        g.setColor(new Color(255,120,50));
-                        g.fillRect(x, y, tile, tile);
-                    }
+                    case PILE_SNOW -> PILE_SNOW_SPRITE.draw(g, x, y, tile, tile);
 
-                    case CAMPFIRE_OFF -> {
-                        // Fogata apagada - Gris (ya se dibuja después)
-                        g.setColor(new Color(255, 255, 240));
-                        g.fillRect(x, y, tile, tile);
-                    }
+                    case IGLOO_AREA -> IGLOO_SPRITE.draw(g, x, y, tile, tile);
 
-                    default -> {
-                        // Piso normal - Blanco/Crema
-                        g.setColor(new Color(255, 255, 240));
-                        g.fillRect(x, y, tile, tile);
-                    }
+                    case HOT_TILE -> HOT_TILE_SPRITE.draw(g, x, y, tile, tile);
+
+                    case PLAYER_ICE -> PLAYER_ICE_SPRITE.draw(g, x, y, tile, tile);
+
+                    default -> FLOOR_SPRITE.draw(g, x, y, tile, tile);
                 }
             }
         }
 
-        // ===== DIBUJAR FOGATAS =====
+        // Dibujar fogatas (encima del piso)
         for (Campfire campfire : level.getCampfires()) {
             Position p = campfire.getPosition();
             int x = p.getCol() * tile;
             int y = p.getRow() * tile;
 
             if (campfire.isLit()) {
-                // 🔥 Fogata ENCENDIDA - Rojo/Naranja vibrante
-                // Base de la fogata
-                g.setColor(new Color(139, 69, 19)); // Marrón (leña)
-                g.fillRect(x + tile / 3, y + tile / 2, tile / 3, tile / 3);
-
-                // Llamas grandes
-                g.setColor(new Color(255, 69, 0)); // Rojo-naranja
-                int[] xFlame = {x + tile / 2, x + tile / 4, x + 3 * tile / 4};
-                int[] yFlame = {y + tile / 6, y + tile / 2, y + tile / 2};
-                g.fillPolygon(xFlame, yFlame, 3);
-
-                // Llamas pequeñas (amarillas)
-                g.setColor(new Color(255, 215, 0)); // Dorado brillante
-                int[] xFlame2 = {x + tile / 2, x + tile / 3, x + 2 * tile / 3};
-                int[] yFlame2 = {y + tile / 4, y + tile / 2, y + tile / 2};
-                g.fillPolygon(xFlame2, yFlame2, 3);
+                // Fogata encendida con llamas dibujadas
+                CAMPFIRE_ON_SPRITE.draw(g, x, y, tile, tile);
             } else {
-                // 💨 Fogata APAGADA - Gris oscuro con cenizas
-                g.setColor(new Color(50, 50, 50)); // Carbón apagado
-                g.fillRect(x + tile / 3, y + tile / 2, tile / 3, tile / 3);
-
-                // Cenizas
-                g.setColor(new Color(120, 120, 120));
-                g.fillOval(x + tile / 4, y + tile / 2 + 5, tile / 6, tile / 6);
-                g.fillOval(x + tile / 2, y + tile / 2 + 3, tile / 6, tile / 6);
+                // Fogata apagada
+                CAMPFIRE_OFF_SPRITE.draw(g, x, y, tile, tile);
             }
         }
 
-        // ===== DIBUJAR FRUTAS =====
+        // Frutas
         for (Fruit f : level.getFruitManager().getActiveFruits()) {
             if (!f.isCollected()) {
                 int x = f.getPosition().getCol() * tile;
                 int y = f.getPosition().getRow() * tile;
 
-                if (f instanceof Cherry) {
-                    // 🍒 CEREZA - Rojo brillante
-                    g.setColor(new Color(220, 20, 60)); // Rojo cereza
-                    g.fillOval(x + tile / 4, y + tile / 4, tile / 2, tile / 2);
-                    // Brillo
-                    g.setColor(new Color(255, 100, 120));
-                    g.fillOval(x + tile / 3, y + tile / 3, tile / 6, tile / 6);
-                    // Tallo
-                    g.setColor(new Color(34, 139, 34));
-                    g.drawLine(x + tile / 2, y + tile / 4, x + tile / 2, y + tile / 6);
-
-                } else if (f instanceof Cactus) {
-                    Cactus cactus = (Cactus) f;
-                    if (cactus.isDangerous()) {
-                        // 🌵 CACTUS PELIGROSO - Verde oscuro con púas rojas
-                        g.setColor(new Color(34, 139, 34)); // Verde oscuro
-                        g.fillRect(x + tile / 3, y + tile / 4, tile / 3, tile / 2);
-
-                        // Púas rojas (peligro!)
-                        g.setColor(new Color(255, 0, 0));
-                        int[] xSpike1 = {x + tile / 3, x + tile / 4, x + tile / 3};
-                        int[] ySpike1 = {y + tile / 3, y + tile / 2, y + 2 * tile / 3};
-                        g.fillPolygon(xSpike1, ySpike1, 3);
-
-                        int[] xSpike2 = {x + 2 * tile / 3, x + 3 * tile / 4, x + 2 * tile / 3};
-                        int[] ySpike2 = {y + tile / 3, y + tile / 2, y + 2 * tile / 3};
-                        g.fillPolygon(xSpike2, ySpike2, 3);
-                    } else {
-                        // 🌵 CACTUS SEGURO - Verde claro sin púas
-                        g.setColor(new Color(50, 205, 50)); // Verde lima
-                        g.fillRect(x + tile / 3, y + tile / 4, tile / 3, tile / 2);
-                        // Brazos del cactus
-                        g.fillRect(x + tile / 6, y + tile / 2 - 5, tile / 6, tile / 8);
-                        g.fillRect(x + 2 * tile / 3, y + tile / 2 - 5, tile / 6, tile / 8);
-                    }
-
+                // Manejo del cactus
+                if (f instanceof Cactus cactus) {
+                    Sprite cactusSprite = cactus.isDangerous() ? CACTUS_DANGEROUS_SPRITE : CACTUS_SAFE_SPRITE;
+                    cactusSprite.draw(g, x, y, tile, tile);
                 } else {
-                    // Otras frutas (Grape, Banana, etc.) - usar render normal
+                    // Otras frutas
                     f.render(g, tile);
                 }
 
@@ -254,10 +176,9 @@ public class PlayingState implements GameState {
             }
         }
 
-        // ===== DIBUJAR JUGADORES =====
+        // Jugadores
         List<Player> players = level.getPlayers();
-        for (int i = 0; i < players.size(); i++) {
-            Player p = players.get(i);
+        for (Player p : players) {
             int x = p.getPosition().getCol() * tile;
             int y = p.getPosition().getRow() * tile;
 
@@ -278,92 +199,94 @@ public class PlayingState implements GameState {
             g.fillOval(x + tile / 4, y + tile / 4, tile / 6, tile / 6);
         }
 
-        // ===== DIBUJAR ENEMIGOS =====
+        //  Enemigos
         for (Enemy e : level.getEnemies()) {
             int x = e.getPosition().getCol() * tile;
             int y = e.getPosition().getRow() * tile;
 
-            if (e instanceof OrangeSquid) {
-                // 🦑 CALAMAR NARANJA - Naranja brillante
-                g.setColor(new Color(255, 140, 0)); // Naranja
-                g.fillOval(x + tile / 6, y + tile / 6, 2 * tile / 3, 2 * tile / 3);
+            switch (e) {
+                case OrangeSquid orangeSquid -> {
+                    // Calamar naranja
+                    g.setColor(new Color(255, 140, 0));
 
-                // Tentáculos
-                g.setColor(new Color(255, 165, 0));
-                for (int i = 0; i < 3; i++) {
-                    int tentX = x + tile / 4 + i * tile / 6;
-                    g.fillRect(tentX, y + 2 * tile / 3, tile / 12, tile / 4);
+                    g.fillOval(x + tile / 6, y + tile / 6, 2 * tile / 3, 2 * tile / 3);
+
+                    // Tentáculos
+                    g.setColor(new Color(255, 165, 0));
+                    for (int i = 0; i < 3; i++) {
+                        int tentX = x + tile / 4 + i * tile / 6;
+                        g.fillRect(tentX, y + 2 * tile / 3, tile / 12, tile / 4);
+                    }
+
+                    // Ojos malvados
+                    g.setColor(Color.RED);
+                    g.fillOval(x + tile / 3, y + tile / 3, tile / 8, tile / 8);
+                    g.fillOval(x + tile / 2, y + tile / 3, tile / 8, tile / 8);
                 }
+                case Troll troll -> {
+                    // Troll
+                    g.setColor(new Color(178, 34, 34)); // Rojo ladrillo
 
-                // Ojos malvados
-                g.setColor(Color.RED);
-                g.fillOval(x + tile / 3, y + tile / 3, tile / 8, tile / 8);
-                g.fillOval(x + tile / 2, y + tile / 3, tile / 8, tile / 8);
+                    g.fillOval(x + tile / 6, y + tile / 6, 2 * tile / 3, 2 * tile / 3);
 
-            } else if (e instanceof Troll) {
-                // 👹 TROLL - Rojo oscuro
-                g.setColor(new Color(178, 34, 34)); // Rojo ladrillo
-                g.fillOval(x + tile / 6, y + tile / 6, 2 * tile / 3, 2 * tile / 3);
+                    // Cuernos
+                    g.setColor(new Color(139, 0, 0));
+                    int[] xHorn1 = {x + tile / 4, x + tile / 4 - tile / 8, x + tile / 4};
+                    int[] yHorn1 = {y + tile / 4, y + tile / 8, y + tile / 6};
+                    g.fillPolygon(xHorn1, yHorn1, 3);
 
-                // Cuernos
-                g.setColor(new Color(139, 0, 0));
-                int[] xHorn1 = {x + tile / 4, x + tile / 4 - tile / 8, x + tile / 4};
-                int[] yHorn1 = {y + tile / 4, y + tile / 8, y + tile / 6};
-                g.fillPolygon(xHorn1, yHorn1, 3);
+                    int[] xHorn2 = {x + 3 * tile / 4, x + 3 * tile / 4 + tile / 8, x + 3 * tile / 4};
+                    int[] yHorn2 = {y + tile / 4, y + tile / 8, y + tile / 6};
+                    g.fillPolygon(xHorn2, yHorn2, 3);
 
-                int[] xHorn2 = {x + 3 * tile / 4, x + 3 * tile / 4 + tile / 8, x + 3 * tile / 4};
-                int[] yHorn2 = {y + tile / 4, y + tile / 8, y + tile / 6};
-                g.fillPolygon(xHorn2, yHorn2, 3);
+                    // Ojos
+                    g.setColor(Color.YELLOW);
+                    g.fillOval(x + tile / 3, y + tile / 3, tile / 8, tile / 8);
+                    g.fillOval(x + tile / 2, y + tile / 3, tile / 8, tile / 8);
+                }
+                case Maceta maceta -> {
+                    // Maceta
+                    g.setColor(new Color(139, 69, 19));
+                    int[] xPot = {x + tile / 4, x + 3 * tile / 4, x + 2 * tile / 3, x + tile / 3};
+                    int[] yPot = {y + 2 * tile / 3, y + 2 * tile / 3, y + tile / 6, y + tile / 6};
+                    g.fillPolygon(xPot, yPot, 4);
 
-                // Ojos
-                g.setColor(Color.YELLOW);
-                g.fillOval(x + tile / 3, y + tile / 3, tile / 8, tile / 8);
-                g.fillOval(x + tile / 2, y + tile / 3, tile / 8, tile / 8);
+                    // Planta (verde)
+                    g.setColor(new Color(34, 139, 34));
+                    g.fillOval(x + tile / 3, y + tile / 6, tile / 3, tile / 2);
 
-            } else if (e instanceof Maceta) {
-                // 🪴 MACETA - Verde con marrón
-                // Maceta (marrón)
-                g.setColor(new Color(139, 69, 19));
-                int[] xPot = {x + tile / 4, x + 3 * tile / 4, x + 2 * tile / 3, x + tile / 3};
-                int[] yPot = {y + 2 * tile / 3, y + 2 * tile / 3, y + tile / 6, y + tile / 6};
-                g.fillPolygon(xPot, yPot, 4);
-
-                // Planta (verde)
-                g.setColor(new Color(34, 139, 34));
-                g.fillOval(x + tile / 3, y + tile / 6, tile / 3, tile / 2);
-
-                // Ojos en la planta
-                g.setColor(Color.WHITE);
-                g.fillOval(x + tile / 3 + 5, y + tile / 3, tile / 10, tile / 10);
-                g.fillOval(x + tile / 2, y + tile / 3, tile / 10, tile / 10);
-                g.setColor(Color.BLACK);
-                g.fillOval(x + tile / 3 + 7, y + tile / 3 + 2, tile / 15, tile / 15);
-                g.fillOval(x + tile / 2 + 2, y + tile / 3 + 2, tile / 15, tile / 15);
-
-            } else {
-                // Otros enemigos - Rojo genérico
-                g.setColor(new Color(255, 0, 0));
-                g.fillOval(x + tile / 6, y + tile / 6, 2 * tile / 3, 2 * tile / 3);
+                    // Ojos en la planta
+                    g.setColor(Color.WHITE);
+                    g.fillOval(x + tile / 3 + 5, y + tile / 3, tile / 10, tile / 10);
+                    g.fillOval(x + tile / 2, y + tile / 3, tile / 10, tile / 10);
+                    g.setColor(Color.BLACK);
+                    g.fillOval(x + tile / 3 + 7, y + tile / 3 + 2, tile / 15, tile / 15);
+                    g.fillOval(x + tile / 2 + 2, y + tile / 3 + 2, tile / 15, tile / 15);
+                }
+                default -> {
+                    // Otros enemigos - Rojo genérico
+                    g.setColor(new Color(255, 0, 0));
+                    g.fillOval(x + tile / 6, y + tile / 6, 2 * tile / 3, 2 * tile / 3);
+                }
             }
         }
 
-        // ===== DIBUJAR HUD (puntuación y timer) =====
-
+        // Puntaje + Timer
         if (!players.isEmpty()) {
             g.setFont(new Font("Arial", Font.BOLD, 18));
 
-            // Score (izquierda)
+            // Score
             g.setColor(Color.WHITE);
-            g.drawString("Score: " + players.get(0).getScore(), 10, 25);
+            g.drawString("Score: " + players.getFirst().getScore(), 10, 25);
 
-            // Timer (derecha, al lado del score)
+            // Timer
             int remainingTicks = TIME_LIMIT - timerTicks;
             int minutes = remainingTicks / 3600;
             int seconds = (remainingTicks % 3600) / 60;
 
             String timeText = String.format("Time: %d:%02d", minutes, seconds);
 
-            // Cambiar color según el tiempo restante
+            // Cambio de color por el paso el tiempo
             if (remainingTicks < 600) { // Menos de 10 segundos
                 g.setColor(Color.RED);
             } else if (remainingTicks < 1800) { // Menos de 30 segundos
@@ -372,10 +295,9 @@ public class PlayingState implements GameState {
                 g.setColor(Color.WHITE);
             }
 
-            // Posicionar el timer al lado del score
-            g.drawString(timeText, 200, 25); // Ajusta el valor 200 según necesites
+            g.drawString(timeText, 200, 25);
 
-            // Mensaje de "TIME UP!" si se acabó el tiempo
+            // Mensaje de "TIME UP!"
             if (timeUp) {
 
                 g.setColor(new Color(0, 0, 0, 180)); // Fondo semi-transparente
@@ -407,12 +329,10 @@ public class PlayingState implements GameState {
         if (keyCode == KeyEvent.VK_RIGHT) p1Dir = Direction.RIGHT;
         if (keyCode == KeyEvent.VK_SPACE) placeOrBreakIce();
 
-        // luego puedes añadir:
-        // WASD para jugador 2, y mapear a otra Direction p2Dir
     }
 
     private void placeOrBreakIce() {
-        Player p = level.getPlayers().get(0);
+        Player p = level.getPlayers().getFirst();
         Direction dir = p.getDirection();
 
         if (dir == null || dir == Direction.NONE) return;
@@ -455,13 +375,17 @@ public class PlayingState implements GameState {
             }
             if (enemyThere) break;
 
-            // NUEVO: Si hay una fogata, detener el rayo
+            // Si hay una fogata, detener el rayo
             CellType cellType = board.getCellType(current);
             if (cellType == CellType.CAMPFIRE_ON || cellType == CellType.CAMPFIRE_OFF) {
                 break;
             }
 
-            // Si encontramos un obstáculo (pared, hielo, etc.), paramos
+            if (cellType == CellType.HOT_TILE) {
+                current = current.translated(dir.getDRow(), dir.getDCol());
+            }
+
+            // Si encontramos un obstáculo, paramos
             if (CollisionDetector.isBlocked(board, current)) {
                 break;
             }
@@ -470,16 +394,19 @@ public class PlayingState implements GameState {
                 board.setCellType(current, CellType.PLAYER_ICE);
             }
 
-            // Si hay fruta en esa celda, la congelamos
+            // Si hay fruta en esa celda, se congela
             for (Fruit f : allFruits) {
                 if (!f.isCollected() && !f.isFrozen() && sameCell(f.getPosition(), current)) {
                     f.freeze();
                 }
             }
-
             current = current.translated(dir.getDRow(), dir.getDCol());
         }
     }
+
+    /**
+     * Maneja la extinción del fuego.
+     */
     private void checkAndExtinguishCampfire(Position pos, Level level) {
         for (Campfire campfire : level.getCampfires()) {
             if (campfire.getPosition().equals(pos)) {
@@ -491,13 +418,13 @@ public class PlayingState implements GameState {
 
     private void breakIceRay(Board board, Position from, Direction dir) {
         Position current = from;
-        Level level = this.level; // Ya tienes acceso al level
+        Level level = this.level;
 
         while (board.isInside(current)) {
             CellType cell = board.getCellType(current);
 
             if (cell == CellType.PLAYER_ICE || cell == CellType.ICE_BLOCK) {
-                // NUEVO: Verificar si hay una fogata en esta posición
+                // Mira si hay una fogata en esta posición
                 checkAndExtinguishCampfire(current, level);
 
                 // Romper el hielo normalmente
@@ -531,9 +458,6 @@ public class PlayingState implements GameState {
         }
     }
 
-
-
-
     @Override
     public void keyReleased(Integer keyCode) {
         // Si sueltas una tecla que corresponde a la dirección actual, paramos
@@ -545,7 +469,7 @@ public class PlayingState implements GameState {
         }
     }
 
-    public Level getLevel() {
-        return level;
-    }
+    public Level getLevel() { return level; }
+    private int getCurrentLevelNumber() { return this.currentLevelNumber; }
+
 }

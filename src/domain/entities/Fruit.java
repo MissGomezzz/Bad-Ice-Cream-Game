@@ -3,6 +3,9 @@ import domain.model.Position;
 import domain.game.Level;
 import java.awt.Graphics2D;
 
+/**
+ * Contiene flags y helpers para el funcionamiento de las frutas con sus características
+ */
 public abstract class Fruit extends Entity{
     protected final Sprite sprite;
     private final int scoreValue;
@@ -18,17 +21,13 @@ public abstract class Fruit extends Entity{
     public int getScoreValue() {return this.scoreValue;}
     public boolean isCollected() {return this.collected;}
     public void collect() {this.collected = true;}
-    public void update(Level level) {
-
-    }
-
+    public void update(Level level) { }
     public abstract int getPoints();
-
     public boolean isFrozen() {return this.frozen;}
     public void freeze() {this.frozen = true;}
     public void unfreeze() {this.frozen = false;}
 
-    //Size of the fruits
+    // Tamaño de las frutas
     public void render(Graphics2D g, int tileSize) {
         int baseX = position.getCol() * tileSize;
         int baseY = position.getRow() * tileSize;
@@ -39,10 +38,6 @@ public abstract class Fruit extends Entity{
         int x = baseX + offset;
         int y = baseY + offset;
 
-        if (!frozen) {
-            sprite.draw(g, x, y, size, size);
-        } else {
-            sprite.draw(g, x, y, size, size);
-        }
+        sprite.draw(g, x, y, size, size);
     }
 }

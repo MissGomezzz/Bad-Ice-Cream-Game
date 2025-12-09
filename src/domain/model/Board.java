@@ -1,5 +1,8 @@
 package domain.model;
 
+/**
+ * El tablero contiene las diferentes entidades en la matriz de celdas de los mapas.
+ */
 public class Board {
 
     private final int rows;
@@ -29,10 +32,10 @@ public class Board {
         }
     }
 
+
     public int getRows() {
         return rows;
     }
-
     public int getCols() {
         return cols;
     }
@@ -44,7 +47,6 @@ public class Board {
     public CellType getCellType(Position p) {
         return cells[p.getRow()][p.getCol()];
     }
-
     public void setCellType(Position p, CellType type) {
         cells[p.getRow()][p.getCol()] = type;
     }

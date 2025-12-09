@@ -11,27 +11,27 @@ import domain.utils.Direction;
 
 /**
  * Movimiento del Calamar Naranja
- * - Persigue al jugador moviéndose hacia él
- * - Si encuentra un bloque de hielo en su camino, se detiene y lo destruye
- * - Solo rompe un bloque de hielo a la vez
- * - Después de destruir el hielo, continúa persiguiendo
+ * Persigue al jugador moviéndose hacia él
+ * Si encuentra un bloque de hielo en su camino, se detiene y lo destruye
+ * Solo rompe un bloque de hielo a la vez
+ * Después de destruir el hielo, continúa persiguiendo
  */
 public class OrangeSquidMovement implements MovementBehavior {
 
     private int tickCounter = 0;
-    private static final int TICKS_PER_MOVE = 12; // Velocidad de movimiento
+    private static final int TICKS_PER_MOVE = 12;
 
     // Control de destrucción de hielo
     private boolean isBreakingIce = false;
     private int breakingTickCounter = 0;
-    private static final int TICKS_TO_BREAK_ICE = 10; // Tiempo que tarda en romper el hielo
+    private static final int TICKS_TO_BREAK_ICE = 10;
     private Position iceBeingBroken = null;
 
     @Override
     public void move(Level level, Entity object) {
         Enemy enemy = (Enemy) object;
 
-        // Controlamos la velocidad
+        // Control de velocidad
         tickCounter++;
         if (tickCounter % TICKS_PER_MOVE != 0) {
             return;

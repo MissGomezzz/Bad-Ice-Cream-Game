@@ -1,21 +1,18 @@
 package domain.entities;
 
 import domain.game.Level;
-import domain.model.Board;
-import domain.model.CellType;
-import domain.model.Position;
+import domain.model.*;
 
 /**
- * Fogata: Obstáculo del mapa que elimina al jugador si lo toca
- * - Puede ser apagada colocando hielo encima y rompiéndolo
- * - Se vuelve a encender después de 10 segundos
- * - Los enemigos no sufren daño al tocarla
+ * La fogata elimina al jugador si lo toca
+ * Puede ser apagada colocando hielo encima y rompiéndolo
+ * Se vuelve a encender después de 10 segundos
+ * Los enemigos no sufren daño al tocarla
  */
 public class Campfire extends Entity {
 
-    // Dos sprites diferentes
-    public static final Sprite SPRITE_ON = new Sprite("/grape.jpg");   // Temporal - fogata encendida
-    public static final Sprite SPRITE_OFF = new Sprite("/banana.jpg"); // Temporal - fogata apagada
+    public static final Sprite SPRITE_ON = new Sprite("/grape.jpg");
+    public static final Sprite SPRITE_OFF = new Sprite("/banana.jpg");
 
     private static final int TICKS_TO_RELIGHT = 600;
 

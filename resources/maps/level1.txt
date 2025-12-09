@@ -1,11 +1,11 @@
 WWWWWWWWWWWWWWWWWW
 WWIIIIIIIIIIIIIIWW
-WIGG..........GGIW
-WIG............GIW
+WIGG.......Z..GGIW
+WIG...Z........GIW
 WI.BB........BB.IW
 WI.BIII....IIIB.IW
 WI..IG.B..B.GI..IW
-WI..I........I.TIW
+WI..I..L.....I.TIW
 WI..I.B....B.I..IW
 WIT.I.B....B.I..IW
 WI..I........I..IW
@@ -13,6 +13,6 @@ WI..IG.B..B.GI..IW
 WI.BIII....IIIB.IW
 WI.BB........BB.IW
 WIG.....P......GIW
-WIGG..........GGIW
+WIGG..Z....Z..GGIW
 WWIIIIIIIIIIIIIIWW
 WWWWWWWWWWWWWWWWWW

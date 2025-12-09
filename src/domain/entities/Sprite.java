@@ -4,6 +4,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.Objects;
 
+/**
+ * Maneja los Sprites estáticos
+ */
 public class Sprite {
 
     private final Image image;

@@ -6,7 +6,6 @@ import domain.game.PlayingState;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyEvent;
 import java.util.Objects;
 
 /**
@@ -24,11 +23,6 @@ public class MenuState implements GameState {
 
     private long lastBlinkTime = 0;
     private boolean textVisible = true;
-    private final int BLINK_INTERVAL = 300;
-
-    private final int buttonWidth = 250;
-    private final int buttonHeight = 65;
-    private final int textScale = 60;
 
     public MenuState(Game game) {
         this.game = game;
@@ -54,6 +48,7 @@ public class MenuState implements GameState {
     @Override
     public void update() {
         long currentTime = System.currentTimeMillis();
+        int BLINK_INTERVAL = 300;
         if (currentTime - lastBlinkTime > BLINK_INTERVAL) {
             textVisible = !textVisible;
             lastBlinkTime = currentTime;
@@ -72,7 +67,9 @@ public class MenuState implements GameState {
             g.fillRect(0, 0, width, height);
         }
 
+        int buttonWidth = 250;
         int btnX = (width - buttonWidth) / 2;
+        int buttonHeight = 65;
         int btnY = height - buttonHeight - 50;
 
         playButtonRect = new Rectangle(btnX, btnY, buttonWidth, buttonHeight);
@@ -83,6 +80,7 @@ public class MenuState implements GameState {
 
         if (textButtonImage != null && textVisible) {
 
+            int textScale = 60;
             int txtW = (buttonWidth * textScale) / 100;
 
             int originalW = textButtonImage.getWidth(null);
@@ -97,11 +95,7 @@ public class MenuState implements GameState {
     }
 
     @Override
-    public void keyPressed(Integer key) {
-        if (key == KeyEvent.VK_ENTER || key == KeyEvent.VK_SPACE) {
-            game.setState(new PlayingState(game,2));
-        }
-    }
+    public void keyPressed(Integer key) {}
 
     @Override
     public void keyReleased(Integer key) {}

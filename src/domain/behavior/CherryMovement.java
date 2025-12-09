@@ -2,16 +2,15 @@ package domain.behavior;
 
 import domain.entities.Fruit;
 import domain.game.Level;
-import domain.model.Board;
-import domain.model.Position;
+import domain.model.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 /**
  * Comportamiento de la Cereza:
- * - Permanece estática durante 20 segundos
- * - Se teletransporta a una posición aleatoria libre
+ * Permanece estática durante 20 segundos
+ * Se teletransporta a una posición aleatoria libre
  */
 public class CherryMovement {
 
@@ -32,7 +31,7 @@ public class CherryMovement {
         }
 
         if (tickCounter >= TICKS_PER_TELEPORT) {
-            System.out.println("¡CHERRY TELETRANSPORTÁNDOSE!");
+            System.out.println("CHERRY TELETRANSPORTÁNDOSE");
             teleportToRandomPosition(level.getBoard(), cherry);
             tickCounter = 0;
         }
@@ -60,7 +59,7 @@ public class CherryMovement {
     private List<Position> findAllFreePositions(Board board) {
         List<Position> freePositions = new ArrayList<>();
 
-        // Recorremos el tablero excluyendo los bordes (que son paredes metálicas)
+        // Recorre el tablero excluyendo los bordes (que son paredes metálicas)
         for (int row = 1; row < board.getRows() - 1; row++) {
             for (int col = 1; col < board.getCols() - 1; col++) {
                 Position pos = new Position(row, col);
@@ -71,26 +70,25 @@ public class CherryMovement {
                 }
             }
         }
-
         return freePositions;
     }
 
     /**
-     * @return Ticks restantes hasta el próximo teletransporte
+     * Ticks restantes hasta el próximo teletransporte
      */
     public int getTicksUntilTeleport() {
         return TICKS_PER_TELEPORT - tickCounter;
     }
 
     /**
-     * @return Progreso hasta el próximo teletransporte de 0.0 a 1.0
+     * Progreso hasta el próximo teletransporte de 0.0 a 1.0
      */
     public float getTeleportProgress() {
         return (float) tickCounter / TICKS_PER_TELEPORT;
     }
 
     /**
-     * @return Segundos restantes hasta el próximo teletransporte
+     * Segundos restantes hasta el próximo teletransporte
      */
     public int getSecondsUntilTeleport() {
         return (TICKS_PER_TELEPORT - tickCounter) / 60;

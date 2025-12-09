@@ -1,23 +1,23 @@
 package domain.game;
 
-import domain.entities.Player;
-import domain.entities.Fruit;
-import domain.entities.Enemy;
-import domain.model.CellType;
-import domain.model.Position;
-import domain.model.Board;
+import domain.entities.*;
+import domain.model.*;
+
 import java.util.List;
 
+/**
+ * Maneja las interacciones entre entidades cuando colisionan
+ */
 public class CollisionDetector {
 
     /**
      * Bloques que bloquean el paso
      */
     public static boolean isBlocked(Board board, Position pos) {
-        //Fuera del tablero = bloqueado
+        // Fuera del tablero = bloqueado
         if (!board.isInside(pos)) return true;
 
-        //Bloqueado si la celda no es atravesable
+        // Bloqueado si la celda no es atravesable
         return !board.isWalkable(pos);
     }
 
@@ -66,7 +66,6 @@ public class CollisionDetector {
         }
     }
 
-    // ===== Helpers =====
 
     private static boolean intersects(Player p, Enemy e) {
         return sameCell(p.getPosition(), e.getPosition());

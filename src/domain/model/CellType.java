@@ -15,13 +15,12 @@ public enum CellType {
     FLOOR(true),
     HOT_TILE(true),
     PLAYER_ICE(false),
-    CAMPFIRE_ON(false),   // Fogata encendida
-    CAMPFIRE_OFF(true);  // Fogata apagada
+    CAMPFIRE_ON(true),
+    CAMPFIRE_OFF(true);
 
     private final Boolean traversable;
 
-    CellType(Boolean traversable) {
-        this.traversable = traversable; }
-
+    CellType(Boolean traversable) { this.traversable = traversable; }
     public Boolean isTraversable() {return traversable; }
+
 }

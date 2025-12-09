@@ -1,19 +1,14 @@
 package domain.game;
 import java.awt.Graphics2D;
-import java.awt.event.KeyEvent;
 
 /**
- * Maneja las dinámicas del juego entre acciones de diferentes pantallas
+ * Maneja y monitorea las dinámicas del juego entre acciones de diferentes pantallas
  */
 public class Game {
     private GameState currentState;
 
     public void setState(GameState state) {
         this.currentState = state;
-    }
-
-    public GameState getState() {
-        return this.currentState;
     }
 
     public void update() {

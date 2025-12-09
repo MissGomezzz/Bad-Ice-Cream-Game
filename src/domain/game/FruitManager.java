@@ -5,6 +5,9 @@ import domain.entities.Fruit;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Maneja y activa las frutas como listas
+ */
 public class FruitManager {
 
     private final List<Fruit> allFruits;
@@ -14,13 +17,9 @@ public class FruitManager {
         this.allFruits = allFruits != null ? allFruits : new ArrayList<>();
     }
 
-    public List<Fruit> getAllFruits() {
-        return allFruits;
-    }
+    public List<Fruit> getAllFruits() { return allFruits; }
 
-    public List<Fruit> getActiveFruits() {
-        return activeFruits;
-    }
+    public List<Fruit> getActiveFruits() { return activeFruits; }
 
     // Activa todas las frutas
     public void activateAll() {

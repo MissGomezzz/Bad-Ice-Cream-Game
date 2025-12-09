@@ -1,4 +1,5 @@
 package domain.game;
+
 import domain.model.*;
 import domain.entities.*;
 import java.util.List;
@@ -15,14 +16,13 @@ public class Level {
     private final Board board;
     private final List<Player> players;
     private final List<Enemy> enemies;
-    private final List<Fruit> fruits;
     private final FruitManager fruitManager;
     private final List<Campfire> campfires;
     private final List<Class<? extends Fruit>> fruitPhases;
     private int currentPhaseIndex = 0;
     private final Map<Player, Direction> lastInputs = new HashMap<>();
     private int playerTickCounter = 0;
-    private static final int TICKS_PER_PLAYER_MOVE = 5; // Ajusta este valor
+    private static final int TICKS_PER_PLAYER_MOVE = 5;
 
 
     public Level (Board board, List<Player> players, List<Enemy> enemies, List<Fruit> fruits, List<Campfire> campfires,
@@ -30,9 +30,9 @@ public class Level {
         this.board = board;
         this.players = players != null ? players : new ArrayList<>();
         this.enemies = enemies != null ? enemies : new ArrayList<>();
-        this.fruits = fruits != null ? fruits : new ArrayList<>();
+        List<Fruit> fruits1 = fruits != null ? fruits : new ArrayList<>();
         this.campfires = campfires != null ? campfires : new ArrayList<>();
-        this.fruitManager = new FruitManager(this.fruits);
+        this.fruitManager = new FruitManager(fruits1);
         this.fruitPhases  = fruitPhases != null ? fruitPhases : new ArrayList<>();
         initFirstFruitPhase();
     }
@@ -40,7 +40,6 @@ public class Level {
     public Board getBoard() {return this.board;}
     public List<Player> getPlayers() {return this.players;}
     public List<Enemy> getEnemies() {return this.enemies;}
-    public List<Fruit> getFruits() {return this.fruits;}
     public FruitManager getFruitManager() {return this.fruitManager;}
     public List<Campfire> getCampfires() { return this.campfires; }
 
@@ -49,7 +48,7 @@ public class Level {
         if (fruitPhases.isEmpty()) {
             fruitManager.activateAll();
         } else {
-            Class<? extends Fruit> firstClass = fruitPhases.get(0);
+            Class<? extends Fruit> firstClass = fruitPhases.getFirst();
             fruitManager.activateByClass(firstClass);
         }
     }
@@ -97,16 +96,15 @@ public class Level {
     }
 
     /**
-     * Cuando tenemos varios jugadores en el tablero
-     * @param playerInputs
+     * Manejo de varios jugadores en el tablero
      */
     private void updatePlayers(Map<Player, Direction> playerInputs) {
         if (players.isEmpty()) return;
 
-        // NUEVO: Control de velocidad del jugador
+        // Control de velocidad del jugador
         playerTickCounter++;
         if (playerTickCounter % TICKS_PER_PLAYER_MOVE != 0) {
-            return; // No mover todavía
+            return;
         }
 
         for (Player p : players) {
@@ -124,27 +122,22 @@ public class Level {
             // Caso 1: la nueva dirección es distinta a la dirección actual de la "carita"
             if (inputDir != p.getDirection()) {
 
+                p.setDirection(inputDir);
                 if (wasStopped) {
+                    return;
                     //Estaba quieto: solo girar, sin avanzar todavía
-                    p.setDirection(inputDir);
-
                 } else {
                     //Ya venía con una dirección pulsada: girar y moverse en el mismo frame
-                    p.setDirection(inputDir);
                     movePlayer(p, inputDir);
                 }
-
             } else {
                 // Caso 2: la dirección pedida coincide con la que ya mira, avanzar normal
                 movePlayer(p, inputDir);
             }
-
             // Actualizamos el último input visto para este jugador
             lastInputs.put(p, inputDir);
         }
     }
-
-
 
     private void movePlayer(Player p, Direction dir){
         if (dir == null || dir == Direction.NONE) { return; }
@@ -156,25 +149,6 @@ public class Level {
             p.setPosition(next);
         }
     }
-
-
-    /**
-     * Para cuando hay un solo jugador en el juego
-     * @param dir
-     */
-    public void updateSinglePlayer(Direction dir) {
-        if (dir == null || dir == Direction.NONE) return;
-
-        Player p = players.get(0);
-        movePlayer(p, dir);
-
-        CollisionDetector.checkPlayerFruit(players, fruitManager.getActiveFruits());
-        CollisionDetector.checkPlayerEnemy(players, enemies);
-
-        updateFruitPhase();
-        updateEnemies();
-    }
-
 
     private void updateEnemies() {
         for (Enemy e: enemies) {
@@ -188,5 +162,4 @@ public class Level {
             campfire.update(this);
         }
     }
-
 }

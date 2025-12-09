@@ -2,6 +2,9 @@ package domain.entities;
 import domain.model.Position;
 import domain.game.Level;
 
+/**
+ * Fruta estática.
+ */
 public class Grape extends Fruit{
     private static final int GRAPE_SCORE = 50;
     private static final Sprite SPRITE = new Sprite("/grape.jpg");
@@ -9,10 +12,10 @@ public class Grape extends Fruit{
     public Grape(Position position) {
         super(position, GRAPE_SCORE, SPRITE);
     }
+
     @Override
-    public void update(Level level) {
-        // Uva estática por ahora
-    }
+    // Las uvas son estáticas
+    public void update(Level level) { }
     @Override
     public int getPoints() {return GRAPE_SCORE;}
 }

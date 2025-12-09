@@ -5,19 +5,21 @@ import domain.entities.*;
 import domain.model.*;
 import domain.utils.Direction;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.*;
 
+/**
+ * Se encarga de leer los mapas e identifica las entidades en ella.
+ */
 public class LevelLoader {
 
+    // Crea una lista de las clases de frutas
     public static Level loadFromResource(String path, List<Class<? extends Fruit>> fruitPhases) {
         List<String> lines = readLines(path);
         List<Campfire> campfires = new ArrayList<>();
 
         int rows = lines.size();
-        int cols = lines.get(0).length();
+        int cols = lines.getFirst().length();
 
         Board board = new Board(rows, cols);
         List<Player> players = new ArrayList<>();
@@ -37,25 +39,41 @@ public class LevelLoader {
                         board.setCellType(pos, CellType.METALLIC_WALL);
                         break;
 
+                    case 'Z':
+                        board.setCellType(pos, CellType.PILE_SNOW);
+                        break;
+
+                    case 'R':
+                        board.setCellType(pos, CellType.RED_WALL);
+                        break;
+
+                    case 'X':
+                        board.setCellType(pos, CellType.YELLOW_WALL);
+                        break;
+
                     case 'I':
                         board.setCellType(pos, CellType.ICE_BLOCK);
+                        break;
+
+                    case 'L':
+                        board.setCellType(pos, CellType.IGLOO_AREA);
                         break;
 
                     case 'H': // Baldose caliente
                         board.setCellType(pos, CellType.HOT_TILE);
                         break;
 
-                    case 'G': // grape fruit
+                    case 'G': // Uvas - grape
                         board.setCellType(pos, CellType.FLOOR);
                         fruits.add(new Grape(pos));
                         break;
 
-                    case 'B': // banana
+                    case 'B': // Banana
                         board.setCellType(pos, CellType.FLOOR);
                         fruits.add(new Banana(pos));
                         break;
 
-                    case 'T': // enemy (troll por ahora)
+                    case 'T': // Troll
                         board.setCellType(pos, CellType.FLOOR);
                         enemies.add(new Troll(
                                 pos,
@@ -64,7 +82,7 @@ public class LevelLoader {
                         ));
                         break;
 
-                    case 'M': // Maceta enemy
+                    case 'M': // Maceta
                         board.setCellType(pos, CellType.FLOOR);
                         enemies.add(new Maceta(
                                 pos,
@@ -73,7 +91,7 @@ public class LevelLoader {
                         ));
                         break;
 
-                    case 'O': // Orange Squid
+                    case 'O': // Orange Squid - calamar naranja
                         board.setCellType(pos, CellType.FLOOR);
                         enemies.add(new OrangeSquid(
                                 pos,
@@ -124,25 +142,24 @@ public class LevelLoader {
         }
 
         // Construir el nivel
-        Level level = new Level(board, players, enemies, fruits, campfires, fruitPhases);
-        return level;
+        return new Level(board, players, enemies, fruits, campfires, fruitPhases);
     }
 
     private static List<String> readLines(String path) {
-        try (InputStream is = LevelLoader.class.getResourceAsStream(path);
-             BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
+        try (InputStream is = LevelLoader.class.getResourceAsStream(path)) {
+            assert is != null;
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
 
-            if (is == null) throw new RuntimeException("Mapa no encontrado: " + path);
+                List<String> lines = new ArrayList<>();
+                String l;
 
-            List<String> lines = new ArrayList<>();
-            String l;
+                while ((l = br.readLine()) != null) {
+                    if (!l.isBlank()) lines.add(l);
+                }
 
-            while ((l = br.readLine()) != null) {
-                if (!l.isBlank()) lines.add(l);
+                return lines;
+
             }
-
-            return lines;
-
         } catch (Exception e) {
             throw new RuntimeException("Error leyendo mapa " + path, e);
         }

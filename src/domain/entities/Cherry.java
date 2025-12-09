@@ -6,7 +6,6 @@ import domain.model.Position;
 
 /**
  * Cereza: Fruta parcialmente estática que se teletransporta cada 20 segundos
- * Otorga 150 puntos al ser recolectada
  */
 public class Cherry extends Fruit {
 

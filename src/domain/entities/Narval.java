@@ -5,10 +5,9 @@ import domain.model.Position;
 import domain.utils.Direction;
 
 /**
- * Narval: Enemigo que patrulla y embiste cuando detecta al jugador alineado
- * - Recorre el espacio sin perseguir directamente
- * - Si detecta un jugador alineado horizontal o verticalmente, embiste
- * - Durante la embestida, destruye bloques de hielo
+ * Enemigo que patrulla y embiste cuando detecta al jugador alineado
+ * Recorre el espacio sin perseguir directamente
+ * Si detecta un jugador alineado horizontal o verticalmente, embiste y destruye hielos
  */
 public class Narval extends Enemy {
 
