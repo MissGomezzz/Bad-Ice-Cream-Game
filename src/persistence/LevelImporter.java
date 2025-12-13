@@ -22,14 +22,14 @@ public class LevelImporter {
         }
 
         if (!file.getName().endsWith(".txt")) {
-            log.append("ERROR: Extension invalida (requiere .txt)\n");
+            log.append("ERROR: Extensión inválida (requiere .txt)\n");
             System.err.println(log);
             throw new BadIceException("El archivo debe ser .txt");
         }
 
         try {
             validateLevelFile(file, log);
-            log.append("Validacion exitosa\n");
+            log.append("Validación exitosa\n");
             System.out.println(log);
             return LevelLoader.loadFromFile(file, new ArrayList<>());
 
@@ -62,7 +62,7 @@ public class LevelImporter {
                 .toList();
 
         if (nonEmptyLines.isEmpty()) {
-            throw new BadIceException("Archivo vacio");
+            throw new BadIceException("Archivo vacío");
         }
 
         int expectedCols = nonEmptyLines.get(0).length();
@@ -80,7 +80,7 @@ public class LevelImporter {
             String line = nonEmptyLines.get(i);
             if (line.length() != expectedCols) {
                 throw new BadIceException(
-                        String.format("Linea %d: esperaba %d caracteres, tiene %d",
+                        String.format("Línea %d: esperaba %d caracteres, tiene %d",
                                 i + 1, expectedCols, line.length())
                 );
             }
@@ -96,7 +96,7 @@ public class LevelImporter {
 
                 if (!VALID_CHARACTERS.contains(ch)) {
                     throw new BadIceException(
-                            String.format("Linea %d, columna %d: caracter invalido '%c'",
+                            String.format("Línea %d, columna %d: caracter invalido '%c'",
                                     i + 1, j + 1, ch)
                     );
                 }
