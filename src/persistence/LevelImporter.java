@@ -3,86 +3,123 @@ package persistence;
 import domain.game.Level;
 import domain.game.LevelLoader;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-/**
- * Importa niveles personalizados desde archivos .txt externos
- */
 public class LevelImporter {
+    //Log aplicado con ayuda de la IA
+    private static final Set<Character> VALID_CHARACTERS = Set.of(
+            'W', 'R', 'Y', 'I', 'H', 'L', 'S', 'F', 'P', 'G', 'B', 'C', 'N', 'T', 'M', 'O', 'V', '.', ' '
+    );
 
-    /**
-     * Importa un nivel desde un archivo .txt externo
-     * El formato debe ser igual al de los niveles internos
-     */
     public static Level importFromFile(File file) throws BadIceException, IOException {
+        StringBuilder log = new StringBuilder();
+        log.append("Validando nivel: ").append(file.getName()).append("\n");
+
         if (!file.exists()) {
+            log.append("ERROR: Archivo no encontrado\n");
+            System.err.println(log);
             throw new BadIceException("El archivo no existe: " + file.getName());
         }
 
         if (!file.getName().endsWith(".txt")) {
+            log.append("ERROR: Extension invalida (requiere .txt)\n");
+            System.err.println(log);
             throw new BadIceException("El archivo debe ser .txt");
         }
 
-        // Validar el archivo antes de cargarlo
-        validateLevelFile(file);
+        try {
+            validateLevelFile(file, log);
+            log.append("Validacion exitosa\n");
+            System.out.println(log);
+            return LevelLoader.loadFromFile(file, new ArrayList<>());
 
-        // Cargar el nivel usando el LevelLoader existente
-        return LevelLoader.loadFromFile(file, new ArrayList<>());
+        } catch (BadIceException e) {
+            log.append("FALLO: ").append(e.getMessage()).append("\n");
+            System.err.println(log);
+            throw e;
+        }
     }
 
-    /**
-     * Valida que el archivo tenga el formato correcto
-     */
-    private static void validateLevelFile(File file) throws BadIceException, IOException {
+    private static void validateLevelFile(File file, StringBuilder log)
+            throws BadIceException, IOException {
+
         List<String> lines = new ArrayList<>();
+        int lineNumber = 0;
 
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = br.readLine()) != null) {
-                if (!line.isBlank()) {
-                    lines.add(line);
+                lineNumber++;
+                if (line.isBlank()) {
+                    log.append("Linea ").append(lineNumber).append(": vacia (ignorada)\n");
                 }
+                lines.add(line);
             }
         }
 
-        if (lines.isEmpty()) {
-            throw new BadIceException("El archivo está vacío");
+        List<String> nonEmptyLines = lines.stream()
+                .filter(l -> !l.isBlank())
+                .toList();
+
+        if (nonEmptyLines.isEmpty()) {
+            throw new BadIceException("Archivo vacio");
         }
 
-        int expectedCols = lines.getFirst().length();
-        int expectedRows = lines.size();
+        int expectedCols = nonEmptyLines.get(0).length();
+        int expectedRows = nonEmptyLines.size();
 
-        // Validar que todas las filas tengan el mismo ancho
-        for (int i = 0; i < lines.size(); i++) {
-            String line = lines.get(i);
+        log.append("Dimensiones: ").append(expectedRows).append("x").append(expectedCols).append("\n");
+
+        if (expectedRows < 10 || expectedCols < 10) {
+            throw new BadIceException(
+                    String.format("Dimensiones muy pequeñas: %dx%d (minimo 10x10)", expectedRows, expectedCols)
+            );
+        }
+
+        for (int i = 0; i < nonEmptyLines.size(); i++) {
+            String line = nonEmptyLines.get(i);
             if (line.length() != expectedCols) {
                 throw new BadIceException(
-                        String.format("Error en línea %d: esperaba %d caracteres pero tiene %d",
+                        String.format("Linea %d: esperaba %d caracteres, tiene %d",
                                 i + 1, expectedCols, line.length())
                 );
             }
         }
 
-        // Validar dimensiones mínimas
-        if (expectedRows < 10 || expectedCols < 10) {
-            throw new BadIceException(
-                    String.format("Dimensiones muy pequeñas: %dx%d (mínimo 10x10)",
-                            expectedRows, expectedCols)
-            );
-        }
+        Map<Character, Integer> charCount = new HashMap<>();
 
-        // Validar que tenga al menos un jugador
-        boolean hasPlayer = false;
-        for (String line : lines) {
-            if (line.contains("P")) {
-                hasPlayer = true;
-                break;
+        for (int i = 0; i < nonEmptyLines.size(); i++) {
+            String line = nonEmptyLines.get(i);
+            for (int j = 0; j < line.length(); j++) {
+                char ch = line.charAt(j);
+                charCount.put(ch, charCount.getOrDefault(ch, 0) + 1);
+
+                if (!VALID_CHARACTERS.contains(ch)) {
+                    throw new BadIceException(
+                            String.format("Linea %d, columna %d: caracter invalido '%c'",
+                                    i + 1, j + 1, ch)
+                    );
+                }
             }
         }
 
-        if (!hasPlayer) {
-            throw new BadIceException("El nivel debe tener al menos un jugador (P)");
+        int playerCount = charCount.getOrDefault('P', 0);
+        if (playerCount == 0) {
+            throw new BadIceException("Debe haber al menos un jugador (P)");
         }
+
+        log.append("Jugadores: ").append(playerCount).append("\n");
+
+        int totalFruits = charCount.getOrDefault('G', 0) +
+                charCount.getOrDefault('B', 0) +
+                charCount.getOrDefault('C', 0) +
+                charCount.getOrDefault('N', 0);
+        log.append("Frutas: ").append(totalFruits).append("\n");
+
+        int totalEnemies = charCount.getOrDefault('T', 0) +
+                charCount.getOrDefault('M', 0) +
+                charCount.getOrDefault('O', 0) +
+                charCount.getOrDefault('V', 0);
+        log.append("Enemigos: ").append(totalEnemies).append("\n");
     }
 }
