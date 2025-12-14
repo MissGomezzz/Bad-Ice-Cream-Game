@@ -1,5 +1,6 @@
 package domain.entities;
 
+import domain.game.Flavour;
 import domain.model.Position;
 import domain.utils.Direction;
 
@@ -7,9 +8,6 @@ import java.awt.*;
 import java.util.EnumMap;
 import java.util.Map;
 
-/**
- * Player con manejo de sprites vanilla, tiene puntaje
- */
 public class Player extends Entity {
     private int score = 0;
     private Direction direction = Direction.DOWN;
@@ -18,21 +16,43 @@ public class Player extends Entity {
     private int invulnerableTicks = 0;
     private static final int INVULNERABLE_TIME = 30;
 
-    private static final AnimatedSprite PLAYER_SPRITE;
+    private static final AnimatedSprite VANILLA_SPRITE;
+    private static final AnimatedSprite STRAWBERRY_SPRITE;
+    private static final AnimatedSprite CHOCOLATE_SPRITE;
+
+    private Flavour flavour = Flavour.VANILLA;
 
     static {
-        Map<Direction, String> playerSprites = new EnumMap<>(Direction.class);
-        playerSprites.put(Direction.UP, "/vanilla-up.gif");
-        playerSprites.put(Direction.DOWN, "/vanilla-down.gif");
-        playerSprites.put(Direction.LEFT, "/vanilla-left.gif");
-        playerSprites.put(Direction.RIGHT, "/vanilla-right.gif");
+        VANILLA_SPRITE = buildSprite("vanilla");
+        STRAWBERRY_SPRITE = buildSprite("strawberry");
+        CHOCOLATE_SPRITE = buildSprite("chocolate");
+    }
 
-        PLAYER_SPRITE = new AnimatedSprite(playerSprites);
+    private static AnimatedSprite buildSprite(String prefix) {
+        Map<Direction, String> sprites = new EnumMap<>(Direction.class);
+        sprites.put(Direction.UP, "/" + prefix + "-up.gif");
+        sprites.put(Direction.DOWN, "/" + prefix + "-down.gif");
+        sprites.put(Direction.LEFT, "/" + prefix + "-left.gif");
+        sprites.put(Direction.RIGHT, "/" + prefix + "-right.gif");
+        return new AnimatedSprite(sprites);
     }
 
     public Player(Position position) {
         super(position);
-        setAnimatedSprite(PLAYER_SPRITE);
+        setFlavour(Flavour.VANILLA);
+    }
+
+    public void setFlavour(Flavour flavour) {
+        if (flavour == null) return;
+        this.flavour = flavour;
+
+        if (flavour == Flavour.STRAWBERRY) setAnimatedSprite(STRAWBERRY_SPRITE);
+        else if (flavour == Flavour.CHOCOLATE) setAnimatedSprite(CHOCOLATE_SPRITE);
+        else setAnimatedSprite(VANILLA_SPRITE);
+    }
+
+    public Flavour getFlavour() {
+        return flavour;
     }
 
     public void render(Graphics2D g, int tileSize) {
@@ -56,7 +76,6 @@ public class Player extends Entity {
         if (invulnerableTicks > 0) invulnerableTicks--;
     }
 
-    // Maneja la muerte del jugador
     public void onHitByEnemy(Entity e) {
         if (dead) return;
         if (invulnerableTicks > 0) return;

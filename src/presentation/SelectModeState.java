@@ -7,56 +7,47 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.Objects;
 
-/**
- * Maneja el modo de juego que desee el usuario.
- */
 public class SelectModeState implements GameState {
 
     private final Game game;
 
-    // Imágenes
     private Image backgroundGif;
     private Image buttonBackBg;
     private Image backButton;
     private Image playerBg;
     private Image kindScoop;
     private Image iceCreams;
+
+    private Image P;
     private Image PvP;
     private Image PvM;
     private Image MvM;
 
-    // Caja superior
     private final int topBoxX = 32;
     private final int topBoxY = 24;
     private final int topBoxWidth = 512;
     private final int topBoxHeight = 320;
 
-    // Opciones (PvP / PvM / MvM)
     private final int optX = topBoxX + 40;
-    private final int optY = topBoxY + 100;
+    private final int optY = topBoxY + 80;
     private final int optW = 120;
     private final int optH = 40;
+    private final int optSpacing = 55;
 
-    private final int optSpacing = 55; // separación entre opciones
-
-    //  Helados (3 scoops)
     private final int icW = 220;
     private final int icH = 220;
     private final int icX = topBoxX + topBoxWidth - icW - 20;
     private final int icY = topBoxY + 80;
 
-    // Caja inferior
     private final int bottomBoxX = 32;
     private final int bottomBoxY = 360;
     private final int bottomBoxWidth = 512;
     private final int bottomBoxHeight = 160;
 
-    // Botón BACK
     private final int backBtnWidth = 168;
     private final int backBtnHeight = 64;
     private final int backBtnX = bottomBoxX + (bottomBoxWidth - backBtnWidth) / 2;
     private final int backBtnY = bottomBoxY + (bottomBoxHeight - backBtnHeight) / 2;
-
 
     public SelectModeState(Game game) {
         this.game = game;
@@ -86,6 +77,14 @@ public class SelectModeState implements GameState {
                     Objects.requireNonNull(getClass().getResource("/3-icecreams.png"))
             ).getImage();
 
+            this.P = new ImageIcon(
+                    Objects.requireNonNull(getClass().getResource("/P.png"))
+            ).getImage();
+
+            this.PvP = new ImageIcon(
+                    Objects.requireNonNull(getClass().getResource("/pvp.png"))
+            ).getImage();
+
             this.PvM = new ImageIcon(
                     Objects.requireNonNull(getClass().getResource("/pvm.png"))
             ).getImage();
@@ -94,20 +93,14 @@ public class SelectModeState implements GameState {
                     Objects.requireNonNull(getClass().getResource("/mvm.png"))
             ).getImage();
 
-            this.PvP = new ImageIcon(
-                    Objects.requireNonNull(getClass().getResource("/pvp.png"))
-            ).getImage();
-
         } catch (Exception e) {
             System.err.println("Error cargando recursos: " + e.getMessage());
         }
     }
 
-
     @Override
     public void render(Graphics2D g) {
 
-        // Fondo completo
         if (backgroundGif != null) {
             g.drawImage(backgroundGif, 0, 0, GamePanel.WIDTH, GamePanel.HEIGHT, null);
         } else {
@@ -115,38 +108,31 @@ public class SelectModeState implements GameState {
             g.fillRect(0, 0, GamePanel.WIDTH, GamePanel.HEIGHT);
         }
 
-        // Caja superior
         if (playerBg != null) {
             g.drawImage(playerBg, topBoxX, topBoxY, topBoxWidth, topBoxHeight, null);
         }
 
-        // Título "kind of scoop?"
         if (kindScoop != null) {
             int titleWidth = 330;
             int titleHeight = 40;
-
             int titleX = topBoxX + (topBoxWidth - titleWidth) / 2;
             int titleY = topBoxY + 20;
-
             g.drawImage(kindScoop, titleX, titleY, titleWidth, titleHeight, null);
         }
 
-        // Opciones PvP / PvM / MvM
-        g.drawImage(PvP, optX, optY, optW, optH, null);
-        g.drawImage(PvM, optX, optY + optSpacing, optW, optH, null);
-        g.drawImage(MvM, optX, optY + optSpacing * 2, optW, optH, null);
+        if (P != null)   g.drawImage(P,   optX, optY, 65, optH, null);
+        if (PvP != null) g.drawImage(PvP, optX, optY + optSpacing, optW, optH, null);
+        if (PvM != null) g.drawImage(PvM, optX, optY + optSpacing * 2, optW, optH, null);
+        if (MvM != null) g.drawImage(MvM, optX, optY + optSpacing * 3, optW, optH, null);
 
-        // Helados a la derecha
         if (iceCreams != null) {
             g.drawImage(iceCreams, icX, icY, icW, icH, null);
         }
 
-        // Caja inferior BACK
         if (buttonBackBg != null) {
             g.drawImage(buttonBackBg, bottomBoxX, bottomBoxY, bottomBoxWidth, bottomBoxHeight, null);
         }
 
-        // Botón BACK
         if (backButton != null) {
             g.drawImage(backButton, backBtnX, backBtnY, backBtnWidth, backBtnHeight, null);
         }
@@ -155,38 +141,36 @@ public class SelectModeState implements GameState {
     @Override
     public void mouseClicked(Integer x, Integer y) {
 
-        // Click PvP
-        if (x >= optX && x <= optX + optW &&
-                y >= optY && y <= optY + optH) {
-            int optionSelected = 1;
-            game.setState(new ChooseFlavourState(game, optionSelected));
+        if (inside(x, y, optX, optY, optW, optH)) {
+            game.setState(new ChooseFlavourState(game, 0));
+            return;
         }
 
-        // Click PvM
-        if (x >= optX && x <= optX + optW &&
-                y >= optY + optSpacing && y <= optY + optSpacing + optH) {
+        if (inside(x, y, optX, optY + optSpacing, optW, optH)) {
+            game.setState(new ChooseFlavourState(game, 1));
+            return;
+        }
+
+        if (inside(x, y, optX, optY + optSpacing * 2, optW, optH)) {
             game.setState(new ChooseAIProfileState(game, 2));
+            return;
         }
 
-        // Click MvM
-        if (x >= optX && x <= optX + optW &&
-                y >= optY + optSpacing * 2 && y <= optY + optSpacing * 2 + optH) {
+        if (inside(x, y, optX, optY + optSpacing * 3, optW, optH)) {
             game.setState(new ChooseAIProfileState(game, 3));
+            return;
         }
 
-        // Click BACK
-        if (x >= backBtnX && x <= backBtnX + backBtnWidth &&
-                y >= backBtnY && y <= backBtnY + backBtnHeight) {
+        if (inside(x, y, backBtnX, backBtnY, backBtnWidth, backBtnHeight)) {
             game.setState(new MenuState(game));
         }
     }
 
-    @Override
-    public void update() {}
+    private boolean inside(int x, int y, int bx, int by, int bw, int bh) {
+        return x >= bx && x <= bx + bw && y >= by && y <= by + bh;
+    }
 
-    @Override
-    public void keyPressed(Integer keyCode) {}
-
-    @Override
-    public void keyReleased(Integer keyCode) {}
+    @Override public void update() {}
+    @Override public void keyPressed(Integer keyCode) {}
+    @Override public void keyReleased(Integer keyCode) {}
 }

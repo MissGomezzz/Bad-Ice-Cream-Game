@@ -14,18 +14,13 @@ import java.util.Map;
 
 import static domain.game.CollisionDetector.sameCell;
 
-/**
- * Estado de juego activo:
- * contiene un Level y maneja el movimiento de jugadores y enemigos.
- */
 public class PlayingState implements GameState {
 
     private final Game game;
     private final Level level;
 
-
     private int timerTicks = 0;
-    private static final int TIME_LIMIT = 10800; // 3 minutos a 60 FPS
+    private static final int TIME_LIMIT = 10800;
     private boolean timeUp = false;
 
     private final int currentLevelNumber;
@@ -34,10 +29,12 @@ public class PlayingState implements GameState {
     private final AIProfile p1Profile;
     private final AIProfile p2Profile;
 
+    private final Flavour flavourP1;
+    private final Flavour flavourP2;
+
     private final AIController aiP1;
     private final AIController aiP2;
 
-    // Sprites estáticos
     private static final Sprite FLOOR_SPRITE = new Sprite("/empty.jpg");
     private static final Sprite WALL_SPRITE = new Sprite("/wall.jpg");
     private static final Sprite RED_WALL_SPRITE = new Sprite("/red-wall.jpg");
@@ -50,61 +47,72 @@ public class PlayingState implements GameState {
     private static final Sprite CAMPFIRE_ON_SPRITE = new Sprite("/campfire-on.png");
     private static final Sprite CAMPFIRE_OFF_SPRITE = new Sprite("/campfire-off.png");
 
-    // Frutas
     private static final Sprite CACTUS_SAFE_SPRITE = new Sprite("/cactus-safe.png");
     private static final Sprite CACTUS_DANGEROUS_SPRITE = new Sprite("/cactus-not-safe.png");
 
-    // Inputs humanos
     private Direction p1Dir = Direction.NONE;
     private Direction p2Dir = Direction.NONE;
 
-    /**
-     * Constructor viejo: mantiene compatibilidad con pantallas que solo envían levelNumber.
-     * Para esta llamada, asumimos modo PLAYER.
-     */
     public PlayingState(Game game, int levelNumber) {
-        this(game, levelNumber, GameMode.PLAYER, null, null);
+        this(game, levelNumber, GameMode.PLAYER, null, null, Flavour.VANILLA, Flavour.VANILLA);
     }
 
-    /**
-     * Constructor principal: maneja todos los modos (PLAYER / PVP / PVM / MVM).
-     */
     public PlayingState(Game game, int levelNumber, GameMode mode, AIProfile p1AI, AIProfile p2AI) {
+        this(game, levelNumber, mode, p1AI, p2AI, Flavour.VANILLA, Flavour.VANILLA);
+    }
+
+    public PlayingState(Game game, int levelNumber, GameMode mode, AIProfile p1AI, AIProfile p2AI, Flavour flavourP1, Flavour flavourP2) {
         this.game = game;
         this.currentLevelNumber = levelNumber;
-        this.level = LevelFactory.createLevel(levelNumber);
 
-        this.mode = mode != null ? mode : GameMode.PLAYER;
+        this.mode = (mode != null) ? mode : GameMode.PLAYER;
+
+        this.level = LevelFactory.createLevel(levelNumber, this.mode);
 
         this.p1Profile = p1AI;
         this.p2Profile = p2AI;
 
+        this.flavourP1 = (flavourP1 != null) ? flavourP1 : Flavour.VANILLA;
+        this.flavourP2 = (flavourP2 != null) ? flavourP2 : Flavour.VANILLA;
+
         this.aiP1 = (p1AI != null) ? new AIController(p1AI) : null;
         this.aiP2 = (p2AI != null) ? new AIController(p2AI) : null;
+
+        applyFlavoursToPlayers();
     }
 
-    /**
-     * Constructor para nivel importado: también inicializa modo y perfiles.
-     */
-    public PlayingState(Game game, Level customLevel, GameMode mode, AIProfile p1AI, AIProfile p2AI) {
+    public PlayingState(Game game, Level customLevel, GameMode mode, AIProfile p1AI, AIProfile p2AI, Flavour flavourP1, Flavour flavourP2) {
         this.game = game;
         this.currentLevelNumber = -1;
-        this.level = customLevel;
 
-        this.mode = mode != null ? mode : GameMode.PLAYER;
+        this.mode = (mode != null) ? mode : GameMode.PLAYER;
+
+        this.level = customLevel;
 
         this.p1Profile = p1AI;
         this.p2Profile = p2AI;
 
+        this.flavourP1 = (flavourP1 != null) ? flavourP1 : Flavour.VANILLA;
+        this.flavourP2 = (flavourP2 != null) ? flavourP2 : Flavour.VANILLA;
+
         this.aiP1 = (p1AI != null) ? new AIController(p1AI) : null;
         this.aiP2 = (p2AI != null) ? new AIController(p2AI) : null;
+
+        applyFlavoursToPlayers();
     }
 
-    /**
-     * Si alguien en tu flujo todavía llama el custom viejo, que no rompa.
-     */
     public PlayingState(Game game, Level customLevel) {
-        this(game, customLevel, GameMode.PLAYER, null, null);
+        this(game, customLevel, GameMode.PLAYER, null, null, Flavour.VANILLA, Flavour.VANILLA);
+    }
+
+    private void applyFlavoursToPlayers() {
+        List<Player> players = level.getPlayers();
+        if (!players.isEmpty()) {
+            players.get(0).setFlavour(flavourP1);
+        }
+        if (players.size() > 1) {
+            players.get(1).setFlavour(flavourP2);
+        }
     }
 
     @Override
@@ -122,26 +130,22 @@ public class PlayingState implements GameState {
         Map<Player, Direction> inputs = new HashMap<>();
         List<Player> players = level.getPlayers();
 
-        // P1
         if (!players.isEmpty()) {
             Player p1 = players.get(0);
 
             if (mode == GameMode.MVM) {
                 inputs.put(p1, aiP1 != null ? aiP1.decide(level, p1) : Direction.NONE);
             } else {
-                // PLAYER, PVP, PVM: P1 es humano
                 inputs.put(p1, p1Dir);
             }
         }
 
-        // P2
         if (players.size() > 1) {
             Player p2 = players.get(1);
 
             if (mode == GameMode.MVM || mode == GameMode.PVM) {
                 inputs.put(p2, aiP2 != null ? aiP2.decide(level, p2) : Direction.NONE);
             } else {
-                // PVP: P2 humano
                 inputs.put(p2, p2Dir);
             }
         }
@@ -179,8 +183,7 @@ public class PlayingState implements GameState {
                     return;
                 }
 
-                // Reinicia respetando modo y perfiles
-                game.setState(new PlayingState(game, currentLevelNumber, mode, p1Profile, p2Profile));
+                game.setState(new PlayingState(game, currentLevelNumber, mode, p1Profile, p2Profile, flavourP1, flavourP2));
 
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -220,19 +223,13 @@ public class PlayingState implements GameState {
 
         for (Campfire campfire : level.getCampfires()) {
             Position p = campfire.getPosition();
-
-            if (level.getBoard().getCellType(p) == CellType.PLAYER_ICE) {
-                continue;
-            }
+            if (level.getBoard().getCellType(p) == CellType.PLAYER_ICE) continue;
 
             int x = p.getCol() * tile;
             int y = p.getRow() * tile;
 
-            if (campfire.isLit()) {
-                CAMPFIRE_ON_SPRITE.draw(g, x, y, tile, tile);
-            } else {
-                CAMPFIRE_OFF_SPRITE.draw(g, x, y, tile, tile);
-            }
+            if (campfire.isLit()) CAMPFIRE_ON_SPRITE.draw(g, x, y, tile, tile);
+            else CAMPFIRE_OFF_SPRITE.draw(g, x, y, tile, tile);
         }
 
         for (Fruit f : level.getFruitManager().getActiveFruits()) {
@@ -255,13 +252,9 @@ public class PlayingState implements GameState {
         }
 
         List<Player> players = level.getPlayers();
-        for (Player p : players) {
-            p.render(g, tile);
-        }
+        for (Player p : players) p.render(g, tile);
 
-        for (Enemy e : level.getEnemies()) {
-            e.render(g, tile);
-        }
+        for (Enemy e : level.getEnemies()) e.render(g, tile);
 
         if (!players.isEmpty()) {
             g.setFont(new Font("Arial", Font.BOLD, 18));
@@ -269,9 +262,7 @@ public class PlayingState implements GameState {
             g.setColor(Color.WHITE);
             g.drawString("P1: " + players.get(0).getScore(), 10, 25);
 
-            if (players.size() > 1) {
-                g.drawString("P2: " + players.get(1).getScore(), 10, 50);
-            }
+            if (players.size() > 1) g.drawString("P2: " + players.get(1).getScore(), 10, 50);
 
             int remainingTicks = TIME_LIMIT - timerTicks;
             int minutes = remainingTicks / 3600;
@@ -279,13 +270,9 @@ public class PlayingState implements GameState {
 
             String timeText = String.format("Time: %d:%02d", minutes, seconds);
 
-            if (remainingTicks < 600) {
-                g.setColor(Color.RED);
-            } else if (remainingTicks < 1800) {
-                g.setColor(Color.YELLOW);
-            } else {
-                g.setColor(Color.WHITE);
-            }
+            if (remainingTicks < 600) g.setColor(Color.RED);
+            else if (remainingTicks < 1800) g.setColor(Color.YELLOW);
+            else g.setColor(Color.WHITE);
 
             g.drawString(timeText, 200, 25);
 
@@ -316,13 +303,11 @@ public class PlayingState implements GameState {
 
         Player p = players.get(playerIndex);
         Direction dir = p.getDirection();
-
         if (dir == null || dir == Direction.NONE) return;
 
         Board board = level.getBoard();
         Position start = p.getPosition();
         Position next = start.translated(dir.getDRow(), dir.getDCol());
-
         if (!board.isInside(next)) return;
 
         CellType firstCell = board.getCellType(next);
@@ -363,9 +348,7 @@ public class PlayingState implements GameState {
 
             Campfire cf = getCampfireAt(current);
             if (cf != null) {
-                if (cf.isLit()) {
-                    cf.extinguish(board);
-                }
+                if (cf.isLit()) cf.extinguish(board);
                 current = current.translated(dir.getDRow(), dir.getDCol());
                 continue;
             }
@@ -377,9 +360,7 @@ public class PlayingState implements GameState {
                 continue;
             }
 
-            if (CollisionDetector.isBlocked(board, current)) {
-                break;
-            }
+            if (CollisionDetector.isBlocked(board, current)) break;
 
             if (cellType == CellType.FLOOR || cellType == CellType.PILE_SNOW) {
                 board.setCellType(current, CellType.PLAYER_ICE);
@@ -399,12 +380,9 @@ public class PlayingState implements GameState {
         Position current = from;
 
         while (board.isInside(current)) {
-
             Campfire cf = getCampfireAt(current);
             if (cf != null) {
-                if (cf.isLit()) {
-                    cf.extinguish(board);
-                }
+                if (cf.isLit()) cf.extinguish(board);
                 current = current.translated(dir.getDRow(), dir.getDCol());
                 continue;
             }
@@ -425,7 +403,6 @@ public class PlayingState implements GameState {
 
         while (board.isInside(current)) {
             CellType cell = board.getCellType(current);
-
             if (cell != CellType.PLAYER_ICE) break;
 
             for (Fruit f : fruits) {
@@ -444,9 +421,6 @@ public class PlayingState implements GameState {
             game.setState(new PauseState(game, this));
         }
 
-        // Controles de humanos solo si ese jugador es humano en este modo
-
-        // P1 humano en PLAYER, PVP, PVM
         if (mode != GameMode.MVM) {
             if (keyCode == KeyEvent.VK_UP)    p1Dir = Direction.UP;
             if (keyCode == KeyEvent.VK_DOWN)  p1Dir = Direction.DOWN;
@@ -455,7 +429,6 @@ public class PlayingState implements GameState {
             if (keyCode == KeyEvent.VK_SPACE) placeOrBreakIce(0);
         }
 
-        // P2 humano solo en PVP
         if (mode == GameMode.PVP) {
             if (keyCode == KeyEvent.VK_W) p2Dir = Direction.UP;
             if (keyCode == KeyEvent.VK_S) p2Dir = Direction.DOWN;
@@ -467,17 +440,15 @@ public class PlayingState implements GameState {
 
     @Override
     public void keyReleased(Integer keyCode) {
-        // P1 humano en PLAYER, PVP, PVM
         if (mode != GameMode.MVM) {
-            if ((keyCode == KeyEvent.VK_UP    && p1Dir == Direction.UP) ||
-                    (keyCode == KeyEvent.VK_DOWN  && p1Dir == Direction.DOWN) ||
-                    (keyCode == KeyEvent.VK_LEFT  && p1Dir == Direction.LEFT) ||
+            if ((keyCode == KeyEvent.VK_UP && p1Dir == Direction.UP) ||
+                    (keyCode == KeyEvent.VK_DOWN && p1Dir == Direction.DOWN) ||
+                    (keyCode == KeyEvent.VK_LEFT && p1Dir == Direction.LEFT) ||
                     (keyCode == KeyEvent.VK_RIGHT && p1Dir == Direction.RIGHT)) {
                 p1Dir = Direction.NONE;
             }
         }
 
-        // P2 humano solo en PVP
         if (mode == GameMode.PVP) {
             if ((keyCode == KeyEvent.VK_W && p2Dir == Direction.UP) ||
                     (keyCode == KeyEvent.VK_S && p2Dir == Direction.DOWN) ||

@@ -20,10 +20,8 @@ public class GameLoader {
             // Crear nuevo PlayingState con los datos cargados
             PlayingState state = new PlayingState(game, data.levelNumber);
 
-            // Restaurar estado (necesitarás agregar estos métodos en PlayingState)
             state.setTimerTicks(data.timerTicks);
             state.getLevel().getPlayers().getFirst().setScore(data.playerScore);
-            // Restaurar posición del jugador, etc.
 
             return state;
 
