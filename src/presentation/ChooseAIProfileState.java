@@ -28,6 +28,12 @@ public class ChooseAIProfileState implements GameState {
     private Image buttonBackBg;
     private Image backButton;
     private Image playerBg;
+    private Image machine1Title;
+    private Image machine2Title;
+    private Image hungryImg;
+    private Image fearfulImg;
+    private Image expertImg;
+    private Image iceCreams;
 
     // Caja superior
     private final int topBoxX = 32;
@@ -48,11 +54,17 @@ public class ChooseAIProfileState implements GameState {
     private final int backBtnY = bottomBoxY + (bottomBoxHeight - backBtnHeight) / 2;
 
     // Opciones de perfil
-    private final int optX = topBoxX + 60;
-    private final int optY = topBoxY + 110;
-    private final int optW = 220;
-    private final int optH = 45;
+    private final int optX = topBoxX + 40;
+    private final int optY = topBoxY + 100;
+    private final int optW = 120;
+    private final int optH = 40;
     private final int optSpacing = 55;
+
+    // Helados (3 scoops)
+    private final int icW = 220;
+    private final int icH = 220;
+    private final int icX = topBoxX + topBoxWidth - icW - 20;
+    private final int icY = topBoxY + 80;
 
     public ChooseAIProfileState(Game game, int optionSelected) {
         this.game = game;
@@ -73,6 +85,30 @@ public class ChooseAIProfileState implements GameState {
 
             this.playerBg = new ImageIcon(
                     Objects.requireNonNull(getClass().getResource("/player-bg.jpg"))
+            ).getImage();
+
+            this.machine1Title = new ImageIcon(
+                    Objects.requireNonNull(getClass().getResource("/machine-1.png"))
+            ).getImage();
+
+            this.machine2Title = new ImageIcon(
+                    Objects.requireNonNull(getClass().getResource("/machine-2.png"))
+            ).getImage();
+
+            this.hungryImg = new ImageIcon(
+                    Objects.requireNonNull(getClass().getResource("/hungry.png"))
+            ).getImage();
+
+            this.fearfulImg = new ImageIcon(
+                    Objects.requireNonNull(getClass().getResource("/fearful.png"))
+            ).getImage();
+
+            this.expertImg = new ImageIcon(
+                    Objects.requireNonNull(getClass().getResource("/expert.png"))
+            ).getImage();
+
+            this.iceCreams = new ImageIcon(
+                    Objects.requireNonNull(getClass().getResource("/3-icecreams.png"))
             ).getImage();
 
         } catch (Exception e) {
@@ -99,15 +135,34 @@ public class ChooseAIProfileState implements GameState {
             g.drawImage(playerBg, topBoxX, topBoxY, topBoxWidth, topBoxHeight, null);
         }
 
-        g.setColor(Color.BLACK);
-        g.setFont(new Font("Arial", Font.BOLD, 22));
+        // Título (Machine 1 o Machine 2 dependiendo del estado)
+        Image titleImg = getTitleImage();
+        if (titleImg != null) {
+            int titleWidth = 400;
+            int titleHeight = 50;
+            int titleX = topBoxX + (topBoxWidth - titleWidth) / 2;
+            int titleY = topBoxY + 20;
+            g.drawImage(titleImg, titleX, titleY, titleWidth, titleHeight, null);
+        }
 
-        String title = getTitleText();
-        g.drawString(title, topBoxX + 90, topBoxY + 60);
+        // Opciones con imágenes (Hungry, Fearful, Expert)
+        int optionWidth = 150;
+        int optionHeight = 50;
 
-        drawProfileOption(g, AIProfile.HUNGRY,  "HUNGRY",  optY);
-        drawProfileOption(g, AIProfile.FEARFUL, "FEARFUL", optY + optSpacing);
-        drawProfileOption(g, AIProfile.EXPERT,  "EXPERT",  optY + optSpacing * 2);
+        if (hungryImg != null) {
+            g.drawImage(hungryImg, optX, optY, optionWidth, optionHeight, null);
+        }
+        if (fearfulImg != null) {
+            g.drawImage(fearfulImg, optX, optY + optSpacing, optionWidth, optionHeight, null);
+        }
+        if (expertImg != null) {
+            g.drawImage(expertImg, optX, optY + optSpacing * 2, optionWidth, optionHeight, null);
+        }
+
+        // Helados a la derecha
+        if (iceCreams != null) {
+            g.drawImage(iceCreams, icX, icY, icW, icH, null);
+        }
 
         // Caja inferior BACK
         if (buttonBackBg != null) {
@@ -120,48 +175,17 @@ public class ChooseAIProfileState implements GameState {
         }
     }
 
-    private String getTitleText() {
+    private Image getTitleImage() {
         // PvM: solo eliges IA para el jugador 2
         if (optionSelected == 2) {
-            return "AI PROFILE FOR MACHINE";
+            return machine1Title;
         }
 
         // MvM: eliges IA para máquina 1 y luego para máquina 2
         if (selectedProfileP1 == null) {
-            return "AI PROFILE FOR MACHINE 1";
+            return machine1Title;
         }
-        return "AI PROFILE FOR MACHINE 2";
-    }
-
-    private void drawProfileOption(Graphics2D g, AIProfile profile, String label, int y) {
-        boolean selected = isSelected(profile);
-
-        g.setColor(new Color(255, 255, 255, 70));
-        g.fillRect(optX, y, optW, optH);
-
-        g.setColor(Color.WHITE);
-        g.drawRect(optX, y, optW, optH);
-
-        g.setFont(new Font("Arial", Font.BOLD, 20));
-        g.drawString(label, optX + 20, y + 30);
-
-        if (selected) {
-            g.setColor(new Color(0, 0, 0, 120));
-            g.fillRect(optX, y, optW, optH);
-            g.setColor(Color.YELLOW);
-            g.drawRect(optX + 2, y + 2, optW - 4, optH - 4);
-        }
-    }
-
-    private boolean isSelected(AIProfile profile) {
-        if (optionSelected == 2) {
-            return selectedProfileP2 == profile;
-        }
-        // MvM: resaltamos la que se está seleccionando actualmente
-        if (selectedProfileP1 == null) {
-            return selectedProfileP1 == profile;
-        }
-        return selectedProfileP2 == profile;
+        return machine2Title;
     }
 
     @Override
@@ -197,11 +221,14 @@ public class ChooseAIProfileState implements GameState {
     }
 
     private AIProfile getClickedProfile(int x, int y) {
-        if (x < optX || x > optX + optW) return null;
+        int optionWidth = 150;
+        int optionHeight = 50;
 
-        if (y >= optY && y <= optY + optH) return AIProfile.HUNGRY;
-        if (y >= optY + optSpacing && y <= optY + optSpacing + optH) return AIProfile.FEARFUL;
-        if (y >= optY + optSpacing * 2 && y <= optY + optSpacing * 2 + optH) return AIProfile.EXPERT;
+        if (x < optX || x > optX + optionWidth) return null;
+
+        if (y >= optY && y <= optY + optionHeight) return AIProfile.HUNGRY;
+        if (y >= optY + optSpacing && y <= optY + optSpacing + optionHeight) return AIProfile.FEARFUL;
+        if (y >= optY + optSpacing * 2 && y <= optY + optSpacing * 2 + optionHeight) return AIProfile.EXPERT;
 
         return null;
     }
