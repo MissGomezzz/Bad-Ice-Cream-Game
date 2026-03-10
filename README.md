@@ -19,7 +19,8 @@ For example, the types of machines include:
 - Expert: makes the smartest decision for the game situation. 
 
 ### Extra notes:
-Some of the GIFs and sprites where found in the following link: [Sprints](shttps://www.spriters-resource.com/browser_games/badicecream/)
+Some of the GIFs and sprites where found in the following link: [Sprints](https://www.spriters-resource.com/browser_games/badicecream/)
+
 Others where built and made from scratch. Same with backgrounds and buttons. 
 
 ## Authors:
