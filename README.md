@@ -1,7 +1,7 @@
 # Bad Ice Cream - DOPO 
 
 ## Intro 
-This is a project built in 2025 for my POO class, made with Paula Valentina Lozano. 
+This is a project built in 2025 for my POO class, made with ([@paValentina-33](https://github.com/Valentina-33)) 
 Its purpose was to learn and improve Java and POO related topics, by implementing design patterns and code refactoring. 
 
 ## Gameplay
